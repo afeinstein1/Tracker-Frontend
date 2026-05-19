@@ -1,4 +1,5 @@
 import { CheckboxFieldView } from "@/components/CheckboxField";
+import { Meter } from "@/components/Meter";
 import { NumberFieldView } from "@/components/NumberField";
 import { CheckboxField, NumberField } from "@/Types/field";
 import { Text, View } from "react-native";
@@ -22,16 +23,19 @@ export default function Index() {
 
   
   return (
-    <View
-      style={{
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-      }}
-    >
-      <Text>Edit app/index.tsx to edit this screen.</Text>
+    
+    <View>
+      <View style={{ alignItems: "center", marginTop: 40 }}>
+        <Meter
+          label="Total Progress"
+          maxValue={500}
+          value={250}
+          formatOptions={{style: "percent"}} />
+      </View>
       <CheckboxFieldView field={test} />
       <NumberFieldView field={test2} />
+
+      
     </View>
   );
 }
