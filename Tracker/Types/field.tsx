@@ -9,17 +9,25 @@ export interface CheckboxField extends Field{
     checked: boolean
 }
 
-export interface TextField extends Field{
-    type: "text"
-    value: string
-}
-
 export interface NumberField extends Field{
     type: "number"
     value: number
+    max: number
 }
 
 export type TrackerField =
     | CheckboxField
-    | TextField
     | NumberField
+
+
+export interface TrackerSection {
+  id: string
+  title: string
+  fields: TrackerField[]
+}
+
+export interface Tracker {
+  id: string
+  title: string
+  sections: TrackerSection[]
+}
