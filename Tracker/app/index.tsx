@@ -1,6 +1,6 @@
 import { CheckboxFieldView } from "@/components/CheckboxField";
 import { Meter } from "@/components/Meter";
-import { NumberFieldView } from "@/components/NumberField";
+import { ProgressNumber } from "@/components/NumberField";
 import { CheckboxField, NumberField } from "@/Types/field";
 import { Text, View } from "react-native";
 
@@ -32,8 +32,17 @@ export default function Index() {
           value={250}
           formatOptions={{style: "percent"}} />
       </View>
-      <CheckboxFieldView field={test} />
-      <NumberFieldView field={test2} />
+      <CheckboxFieldView 
+        field={{
+          id: "1",
+          label: "words",
+          weight: 1,
+          type: "checkbox",
+          checked: false
+        }}
+        onChange={(checked) => {}}
+/>
+      <ProgressNumber label={"words"} max={100}/>
 
       
     </View>

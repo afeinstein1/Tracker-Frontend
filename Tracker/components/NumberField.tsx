@@ -1,16 +1,23 @@
-import { NumberField } from "@/Types/field"
-import { View,Text,Switch } from "react-native"
+import { useState } from 'react'
+import {NumberField, Label, Input, Button, Group} from 'react-aria-components'
 
-
-type Props = {
-  field: NumberField
-}
-
-export function NumberFieldView({ field }: Props) {
+export function ProgressNumber({ label, max }: { label: string, max: number }) {
+  const [value, setValue] = useState(0)
+  
   return (
-    <View>
-      <Text>{field.label}: {field.value}</Text>
-
-    </View>
+    <NumberField 
+      value={value} 
+      onChange={setValue}
+      minValue={0}
+      maxValue={max}
+    >
+      <Label>{label}</Label>
+      <Group>
+        <Button slot="decrement">-</Button>
+        <Input />
+        <Button slot="increment">+</Button>
+      </Group>
+      <span>/ {max}</span>
+    </NumberField>
   )
 }
