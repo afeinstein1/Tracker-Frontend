@@ -1,13 +1,18 @@
 import { useState } from 'react'
 import {NumberField, Label, Input, Button, Group} from 'react-aria-components'
 
-export function ProgressNumber({ label, max }: { label: string, max: number }) {
+export function ProgressNumber({ label, max, onChange }: { label: string, max: number, onChange: (value: number) => void }) {
   const [value, setValue] = useState(0)
+
+  function handleChange(newValue: number) {
+    setValue(newValue)
+    onChange(newValue)
+  }
   
   return (
     <NumberField 
       value={value} 
-      onChange={setValue}
+      onChange={handleChange}
       minValue={0}
       maxValue={max}
     >
