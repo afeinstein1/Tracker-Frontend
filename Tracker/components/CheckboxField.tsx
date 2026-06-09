@@ -7,13 +7,19 @@ type Props = {
   onChange: (checked: boolean) => void
 }
 
-export function CheckboxFieldView({ field }: Props) {
+
+export function CheckboxFieldView({ field, onChange }: Props) {
   const [checked, setChecked] = useState(field.checked)
+
+  function handleChange(newChecked: boolean) {
+    setChecked(newChecked)
+    onChange(newChecked)
+  }
 
   return (
     <Checkbox 
       isSelected={checked}
-      onChange={setChecked}
+      onChange={handleChange}
       style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
     >
       <div style={{

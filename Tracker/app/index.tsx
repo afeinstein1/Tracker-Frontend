@@ -1,8 +1,8 @@
 import { CheckboxFieldView } from "@/components/CheckboxField";
 import { Meter } from "@/components/Meter";
 import { ProgressNumber } from "@/components/NumberField";
-import { TrackerView } from "@/renderer/TrackerRenderer";
 import { CheckboxField, NumberField, Tracker } from "@/Types/field";
+import {TrackerView } from "@/renderer/TrackerRenderer"
 import { Text, View } from "react-native";
 
 
