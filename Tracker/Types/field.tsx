@@ -26,8 +26,14 @@ export interface TrackerSection {
   fields: TrackerField[]
 }
 
-export interface Tracker {
+export interface TrackerTab {
   id: string
   title: string
   sections: TrackerSection[]
+}
+
+export interface Tracker {
+  id: string
+  title: string
+  tabs: TrackerTab[]
 }
