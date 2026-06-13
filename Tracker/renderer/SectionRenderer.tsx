@@ -8,7 +8,12 @@ type Props = {
 
 export function TrackerSectionView({ section, onFieldChange }: Props) {
   return (
-    <div>
+    <div style={{
+      border: '2px solid #ccc',
+      borderRadius: '12px',
+      padding: '16px',
+      marginBottom: '16px'
+    }}>
       <h2>{section.title}</h2>
       {section.fields.map(field => (
         <div key={field.id}>
