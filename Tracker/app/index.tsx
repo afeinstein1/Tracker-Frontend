@@ -1,5 +1,8 @@
 import { TrackerView } from "@/renderer/TrackerRenderer"
 import { Tracker } from "@/Types/field"
+import { supabase } from '../lib/supabase'
+import { useEffect, useState } from "react"
+import { UserResponse } from "@supabase/supabase-js"
 
 
 
@@ -47,5 +50,16 @@ const dummyTracker: Tracker = {
 }
 
 export default function Index() {
-    return <TrackerView tracker={dummyTracker} />
-}
+  const [user, setUser] = useState<UserResponse | null >(null)
+  useEffect(()=> {
+    supabase.auth.getUser().then((data)=>{
+      setUser(data)
+    })
+  })
+    return (
+      <>
+      <h1>{user?.data.user?.id}</h1> 
+    <TrackerView tracker={dummyTracker} />
+    </>
+    )
+  }
