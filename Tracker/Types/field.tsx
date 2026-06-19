@@ -37,3 +37,8 @@ export interface Tracker {
   title: string
   tabs: TrackerTab[]
 }
+export type EditTarget =
+  | { type: "tracker"; item: Tracker }
+  | { type: "tab"; item: TrackerTab }
+  | { type: "section"; item: TrackerSection; tabId: string }
+  | { type: "field"; item: TrackerField; sectionId: string }

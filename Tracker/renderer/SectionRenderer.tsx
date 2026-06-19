@@ -1,12 +1,15 @@
-import { TrackerSection } from "@/Types/field"
+import { EditTarget, TrackerSection } from "@/Types/field"
 import { renderField } from "./renderer"
 
 type Props = {
   section: TrackerSection
   onFieldChange: (fieldId: string, value: boolean | number) => void
+  isEditMode: boolean
+  onEditTarget: (target: EditTarget) => void
+  tabId: string
 }
 
-export function TrackerSectionView({ section, onFieldChange }: Props) {
+export function TrackerSectionView({ section, onFieldChange, isEditMode, onEditTarget }: Props) {
   return (
     <div style={{
       border: '2px solid #ccc',
@@ -14,12 +17,21 @@ export function TrackerSectionView({ section, onFieldChange }: Props) {
       padding: '16px',
       marginBottom: '16px'
     }}>
-      <h2>{section.title}</h2>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <h2 style={{ margin: 0 }}>{section.title}</h2>
+        {isEditMode && (
+          <button onClick={() => onEditTarget({ type: "section", item: section, tabId: "" })}>✏️</button>
+        )}
+      </div>
       {section.fields.map(field => (
-        <div key={field.id}>
+        <div key={field.id} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           {renderField(field, onFieldChange)}
+          {isEditMode && (
+            <button onClick={() => onEditTarget({ type: "field", item: field, sectionId: section.id })}>✏️</button>
+          )}
         </div>
       ))}
+      {isEditMode && <button style={{ marginTop: '8px' }}>+ Field</button>}
     </div>
   )
 }
