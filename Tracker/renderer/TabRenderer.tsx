@@ -1,13 +1,15 @@
-import { TrackerTab } from "@/Types/field"
+import { EditTarget, TrackerTab } from "@/Types/field"
 import { TrackerSectionView } from "./SectionRenderer"
 import { Meter } from "@/components/Meter"
 
 type Props = {
   tab: TrackerTab
   onFieldChange: (sectionId: string, fieldId: string, value: boolean | number) => void
+  isEditMode: boolean
+  onEditTarget: (target: EditTarget) => void
 }
 
-export function TabView({ tab, onFieldChange }: Props) {
+export function TabView({ tab, onFieldChange, isEditMode, onEditTarget }: Props) {
   const fields = tab.sections.flatMap(section => section.fields)
 
   const totalProgress = fields.reduce((sum, field) => {
@@ -26,6 +28,9 @@ export function TabView({ tab, onFieldChange }: Props) {
           key={section.id}
           section={section}
           onFieldChange={(fieldId, value) => onFieldChange(section.id, fieldId, value)}
+          isEditMode={isEditMode}
+          onEditTarget={onEditTarget}
+          tabId={tab.id}
         />
       ))}
     </div>
