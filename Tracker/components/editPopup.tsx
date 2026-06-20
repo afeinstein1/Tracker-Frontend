@@ -21,14 +21,17 @@ export function EditPopup({ target, onSave, onDelete, onClose }: Props) {
     target.type === "field" && target.item.type === "number" ? target.item.max : 0
   )
   const [weight, setWeight] = useState(
-  target.type === "field" ? target.item.weight : 1
+    target.type === "field" ? target.item.weight : 1
+  )
+  const [isPublic, setIsPublic] = useState(
+    target.type === "tracker" ? target.item.is_public : false
   )
 
 
   
   function handleSave() {
     if (target.type === "tracker") {
-      onSave({ ...target, item: { ...target.item, title } })
+      onSave({ ...target, item: { ...target.item, title, is_public: isPublic } })
     } else if (target.type === "tab") {
       onSave({ ...target, item: { ...target.item, title } })
     } else if (target.type === "section") {
@@ -75,6 +78,16 @@ export function EditPopup({ target, onSave, onDelete, onClose }: Props) {
                 style={{ display: 'block', width: '100%', marginTop: '4px' }}
               />
             </label>
+            {target.type === "tracker" && (
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <input
+                  type="checkbox"
+                  checked={isPublic}
+                  onChange={e => setIsPublic(e.target.checked)}
+                />
+                Make this tracker public
+              </label>
+            )}
 
             {target.type === "field" && (
               <>
