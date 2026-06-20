@@ -7,9 +7,10 @@ type Props = {
   isEditMode: boolean
   onEditTarget: (target: EditTarget) => void
   tabId: string
+  onAddField: (sectionId: string) => void
 }
 
-export function TrackerSectionView({ section, onFieldChange, isEditMode, onEditTarget }: Props) {
+export function TrackerSectionView({ section, onFieldChange, isEditMode, onEditTarget, tabId, onAddField }: Props) {
   return (
     <div style={{
       border: '2px solid #ccc',
@@ -20,7 +21,7 @@ export function TrackerSectionView({ section, onFieldChange, isEditMode, onEditT
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
         <h2 style={{ margin: 0 }}>{section.title}</h2>
         {isEditMode && (
-          <button onClick={() => onEditTarget({ type: "section", item: section, tabId: "" })}>✏️</button>
+          <button onClick={() => onEditTarget({ type: "section", item: section, tabId: tabId })}>✏️</button>
         )}
       </div>
       {section.fields.map(field => (
@@ -31,7 +32,7 @@ export function TrackerSectionView({ section, onFieldChange, isEditMode, onEditT
           )}
         </div>
       ))}
-      {isEditMode && <button style={{ marginTop: '8px' }}>+ Field</button>}
+      {isEditMode && <button style={{ marginTop: '8px' }} onClick={() => onAddField(section.id)}>+ Field</button>}
     </div>
   )
 }

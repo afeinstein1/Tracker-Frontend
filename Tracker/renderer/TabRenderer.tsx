@@ -7,18 +7,23 @@ type Props = {
   onFieldChange: (sectionId: string, fieldId: string, value: boolean | number) => void
   isEditMode: boolean
   onEditTarget: (target: EditTarget) => void
+  onAddSection: () => void
+  onAddField: (sectionId: string) => void
 }
 
-export function TabView({ tab, onFieldChange, isEditMode, onEditTarget }: Props) {
+export function TabView({ tab, onFieldChange, isEditMode, onEditTarget, onAddSection, onAddField }: Props) {
   const fields = tab.sections.flatMap(section => section.fields)
 
+  const totalWeight = fields.reduce((sum, field) => sum + field.weight, 0)
+
   const totalProgress = fields.reduce((sum, field) => {
-    if (field.type === "checkbox") return sum + (field.checked ? 1 : 0)
-    if (field.type === "number") return sum + (field.value / field.max)
-    return sum
+    const contribution = field.type === "checkbox"
+      ? (field.checked ? 1 : 0)
+      : field.value / field.max
+    return sum + (contribution * field.weight)
   }, 0)
 
-  const percentage = fields.length === 0 ? 0 : (totalProgress / fields.length) * 100
+  const percentage = totalWeight === 0 ? 0 : (totalProgress / totalWeight) * 100
 
   return (
     <div>
@@ -31,8 +36,10 @@ export function TabView({ tab, onFieldChange, isEditMode, onEditTarget }: Props)
           isEditMode={isEditMode}
           onEditTarget={onEditTarget}
           tabId={tab.id}
+          onAddField={onAddField}
         />
       ))}
+      {isEditMode && <button onClick={onAddSection}>+ Section</button>}
     </div>
   )
 }
