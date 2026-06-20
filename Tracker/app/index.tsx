@@ -1,65 +1,90 @@
-import { TrackerView } from "@/renderer/TrackerRenderer"
-import { Tracker } from "@/Types/field"
-import { supabase } from '../lib/supabase'
 import { useEffect, useState } from "react"
-import { UserResponse } from "@supabase/supabase-js"
-
-
-
-const dummyTracker: Tracker = {
-  id: "1",
-  title: "Hollow Knight 112%",
-  tabs: [
-    {
-      id: "t1",
-      title: "Bosses",
-      sections: [
-        {
-          id: "s1",
-          title: "Main Bosses",
-          fields: [
-            { id: "f1", label: "Mantis Lords", type: "checkbox", checked: false, weight: 1 },
-            { id: "f2", label: "Hornet", type: "checkbox", checked: false, weight: 2 },
-            { id: "f3", label: "Hollow Knight", type: "checkbox", checked: false, weight: 3 },
-          ]
-        }
-      ]
-    },
-    {
-      id: "t2",
-      title: "Collectibles",
-      sections: [
-        {
-          id: "s2",
-          title: "Grubs",
-          fields: [
-            { id: "f4", label: "Grubs Rescued", type: "number", value: 0, max: 46, weight: 1 },
-          ]
-        },
-        {
-          id: "s3",
-          title: "Charms",
-          fields: [
-            { id: "f5", label: "Wayward Compass", type: "checkbox", checked: false, weight: 1 },
-            { id: "f6", label: "Gathering Swarm", type: "checkbox", checked: false, weight: 1 },
-          ]
-        }
-      ]
-    }
-  ]
-}
+import { supabase } from '../lib/supabase'
+import { loadUserTrackers, createTracker, deleteTracker } from '../lib/trackerService'
+import { Tracker } from "@/Types/field"
+import { useRouter } from "expo-router"
 
 export default function Index() {
-  const [user, setUser] = useState<UserResponse | null >(null)
-  useEffect(()=> {
-    supabase.auth.getUser().then((data)=>{
-      setUser(data)
-    })
-  })
-    return (
-      <>
-      <h1>{user?.data.user?.id}</h1> 
-    <TrackerView tracker={dummyTracker} />
-    </>
-    )
+  const [trackers, setTrackers] = useState<Tracker[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const router = useRouter()
+
+  useEffect(() => {
+    fetchTrackers()
+  }, [])
+
+  async function fetchTrackers() {
+    try {
+      setLoading(true)
+      const data = await loadUserTrackers()
+      setTrackers(data)
+    } catch (e: any) {
+      setError(e.message)
+    } finally {
+      setLoading(false)
+    }
   }
+
+  async function handleCreate() {
+    try {
+      const tracker = await createTracker("New Tracker")
+      router.push(`/tracker/${tracker.id}`)
+    } catch (e: any) {
+      setError(e.message)
+    }
+  }
+
+  async function handleDelete(trackerId: string) {
+    try {
+      await deleteTracker(trackerId)
+      setTrackers(prev => prev.filter(t => t.id !== trackerId))
+    } catch (e: any) {
+      setError(e.message)
+    }
+  }
+
+  async function handleLogout() {
+    await supabase.auth.signOut()
+  }
+
+  if (loading) return <p>Loading...</p>
+  if (error) return <p>Error: {error}</p>
+
+  return (
+    <div style={{ width: '90%', margin: '0 auto' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
+        <h1>My Trackers</h1>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button onClick={handleCreate}>+ New Tracker</button>
+          <button onClick={() => router.push('/search')}>Find Trackers</button>
+          <button onClick={handleLogout}>Log Out</button>
+        </div>
+      </div>
+
+      {trackers.length === 0 ? (
+        <p>You don't have any trackers yet. Create one to get started!</p>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {trackers.map(tracker => (
+            <div key={tracker.id} style={{
+              border: '2px solid #ccc',
+              borderRadius: '12px',
+              padding: '16px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              <h2 style={{ margin: 0 }}>{tracker.title}</h2>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button onClick={() => router.push(`/tracker/${tracker.id}`)}>Open</button>
+                <button onClick={() => handleDelete(tracker.id)} style={{ color: 'red' }}>Delete</button>
+                
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}

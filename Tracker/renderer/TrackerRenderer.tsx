@@ -1,30 +1,41 @@
 import { CheckboxField, EditTarget, Tracker, TrackerField, TrackerSection, TrackerTab } from "@/Types/field"
 import { TabView } from "./TabRenderer"
 import { Meter } from "@/components/Meter"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { EditPopup } from "@/components/editPopup"
 
 type Props = {
   tracker: Tracker
+  onSave?: (tracker: Tracker) => void
 }
 
-export function TrackerView({ tracker: initialTracker }: Props) {
+export function TrackerView({ tracker: initialTracker, onSave }: Props) {
   const [tracker, setTracker] = useState(initialTracker)
   const [activeTab, setActiveTab] = useState(0)
   const [editTarget, setEditTarget] = useState<EditTarget | null>(null)
   const [isEditMode, setIsEditMode] = useState(false)
 
+  useEffect(() => {
+    if (!onSave) return
+    const timer = setTimeout(() => {
+      onSave(tracker)
+    }, 1500)
+    return () => clearTimeout(timer)
+  }, [tracker])
+
+
   function handleAddTab() {
-  const newTab: TrackerTab = {
-    id: crypto.randomUUID(),
-    title: "New Tab",
-    sections: []
+    const newTab: TrackerTab = {
+      id: crypto.randomUUID(),
+      title: "New Tab",
+      sections: []
+    }
+    setTracker(prev => ({
+      ...prev,
+      tabs: [...prev.tabs, newTab]
+    }))
   }
-  setTracker(prev => ({
-    ...prev,
-    tabs: [...prev.tabs, newTab]
-  }))
-}
+
 
   function handleAddSection() {
     const newSection: TrackerSection = {
@@ -74,8 +85,9 @@ export function TrackerView({ tracker: initialTracker }: Props) {
       ...prev,
       tabs: prev.tabs.filter(tab => tab.id !== tabId)
     }))
-    setActiveTab(0)
+    setActiveTab(prev => Math.min(prev, tracker.tabs.length - 2))
     setEditTarget(null)
+    
   }
 
   function handleSectionDelete(tabId: string, sectionId: string) {
@@ -195,7 +207,8 @@ export function TrackerView({ tracker: initialTracker }: Props) {
 
   const percentage = totalWeight === 0 ? 0 : (totalProgress / totalWeight) * 100
 
-  
+
+
 return (
   <div style={{ width: '90%', margin: '0 auto' }}>
     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -225,14 +238,18 @@ return (
       {isEditMode && <button onClick={handleAddTab}>+ Tab</button>}
     </div>
 
-    <TabView
-      tab={tracker.tabs[activeTab]}
-      onFieldChange={(sectionId, fieldId, value) => handleFieldChange(tracker.tabs[activeTab].id, sectionId, fieldId, value)}
-      isEditMode={isEditMode}
-      onEditTarget={setEditTarget}
-      onAddSection={handleAddSection}
-      onAddField={handleAddField}
-    />
+    {tracker.tabs.length === 0 ? (
+      <p>No tabs yet. {isEditMode ? "Click + Tab to add one." : "Click Edit to get started."}</p>
+    ) : (
+      <TabView
+        tab={tracker.tabs[activeTab]}
+        onFieldChange={(sectionId, fieldId, value) => handleFieldChange(tracker.tabs[activeTab].id, sectionId, fieldId, value)}
+        isEditMode={isEditMode}
+        onEditTarget={setEditTarget}
+        onAddSection={handleAddSection}
+        onAddField={handleAddField}
+      />
+    )}
 
     {editTarget && (
       <EditPopup

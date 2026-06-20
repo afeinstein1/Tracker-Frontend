@@ -35,6 +35,7 @@ export interface TrackerTab {
 export interface Tracker {
   id: string
   title: string
+  is_public: boolean
   tabs: TrackerTab[]
 }
 export type EditTarget =

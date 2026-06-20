@@ -2,25 +2,28 @@ import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useRouter } from 'expo-router'
 
-export default function Login() {
+export default function SignUp() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [message, setMessage] = useState<string | null>(null)
   const router = useRouter()
 
-  async function handleLogin() {
+  async function handleSignUp() {
     setLoading(true)
     setError(null)
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { data: { session }, error } = await supabase.auth.signUp({ email, password })
     if (error) setError(error.message)
+    else if (!session) setMessage('Please check your inbox for email verification!')
     setLoading(false)
   }
 
   return (
     <div style={{ width: '90%', maxWidth: '400px', margin: '0 auto', paddingTop: '80px' }}>
-      <h1>Log In</h1>
+      <h1>Sign Up</h1>
       {error && <p style={{ color: 'red' }}>{error}</p>}
+      {message && <p style={{ color: 'green' }}>{message}</p>}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
         <label>
           Email
@@ -42,10 +45,10 @@ export default function Login() {
             style={{ display: 'block', width: '100%', marginTop: '4px', padding: '8px' }}
           />
         </label>
-        <button onClick={handleLogin} disabled={loading}>
-          {loading ? 'Logging in...' : 'Log In'}
+        <button onClick={handleSignUp} disabled={loading}>
+          {loading ? 'Signing up...' : 'Sign Up'}
         </button>
-        <p>Don't have an account? <a onClick={() => router.push('/signup')} style={{ cursor: 'pointer', color: 'blue' }}>Sign up</a></p>
+        <p>Already have an account? <a onClick={() => router.push('/login')} style={{ cursor: 'pointer', color: 'blue' }}>Log in</a></p>
       </div>
     </div>
   )
