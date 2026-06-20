@@ -19,8 +19,8 @@ const dummyTracker: Tracker = {
           title: "Main Bosses",
           fields: [
             { id: "f1", label: "Mantis Lords", type: "checkbox", checked: false, weight: 1 },
-            { id: "f2", label: "Hornet", type: "checkbox", checked: false, weight: 1 },
-            { id: "f3", label: "Hollow Knight", type: "checkbox", checked: false, weight: 1 },
+            { id: "f2", label: "Hornet", type: "checkbox", checked: false, weight: 2 },
+            { id: "f3", label: "Hollow Knight", type: "checkbox", checked: false, weight: 3 },
           ]
         }
       ]

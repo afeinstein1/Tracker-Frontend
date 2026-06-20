@@ -20,7 +20,12 @@ export function EditPopup({ target, onSave, onDelete, onClose }: Props) {
   const [max, setMax] = useState(
     target.type === "field" && target.item.type === "number" ? target.item.max : 0
   )
+  const [weight, setWeight] = useState(
+  target.type === "field" ? target.item.weight : 1
+  )
 
+
+  
   function handleSave() {
     if (target.type === "tracker") {
       onSave({ ...target, item: { ...target.item, title } })
@@ -29,9 +34,9 @@ export function EditPopup({ target, onSave, onDelete, onClose }: Props) {
     } else if (target.type === "section") {
       onSave({ ...target, item: { ...target.item, title } })
     } else if (target.type === "field") {
-      const updatedField: TrackerField = fieldType === "checkbox"
-        ? { ...target.item, label: title, type: "checkbox", checked: target.item.type === "checkbox" ? target.item.checked : false }
-        : { ...target.item, label: title, type: "number", value: target.item.type === "number" ? target.item.value : 0, max }
+    const updatedField: TrackerField = fieldType === "checkbox"
+      ? { ...target.item, label: title, type: "checkbox", checked: target.item.type === "checkbox" ? target.item.checked : false, weight }
+      : { ...target.item, label: title, type: "number", value: target.item.type === "number" ? target.item.value : 0, max, weight }
       onSave({ ...target, item: updatedField })
     }
   }
@@ -96,6 +101,15 @@ export function EditPopup({ target, onSave, onDelete, onClose }: Props) {
                     />
                   </label>
                 )}
+                <label>
+                  Weight
+                  <input
+                    type="number"
+                    value={weight}
+                    onChange={e => setWeight(Number(e.target.value))}
+                    style={{ display: 'block', width: '100%', marginTop: '4px' }}
+                  />
+                </label>
               </>
             )}
 

@@ -1,4 +1,4 @@
-import { EditTarget, Tracker, TrackerField, TrackerSection, TrackerTab } from "@/Types/field"
+import { CheckboxField, EditTarget, Tracker, TrackerField, TrackerSection, TrackerTab } from "@/Types/field"
 import { TabView } from "./TabRenderer"
 import { Meter } from "@/components/Meter"
 import { useState } from "react"
@@ -13,6 +13,102 @@ export function TrackerView({ tracker: initialTracker }: Props) {
   const [activeTab, setActiveTab] = useState(0)
   const [editTarget, setEditTarget] = useState<EditTarget | null>(null)
   const [isEditMode, setIsEditMode] = useState(false)
+
+  function handleAddTab() {
+  const newTab: TrackerTab = {
+    id: crypto.randomUUID(),
+    title: "New Tab",
+    sections: []
+  }
+  setTracker(prev => ({
+    ...prev,
+    tabs: [...prev.tabs, newTab]
+  }))
+}
+
+  function handleAddSection() {
+    const newSection: TrackerSection = {
+      id: crypto.randomUUID(),
+      title: "New Section",
+      fields: []
+    }
+    const tabId = tracker.tabs[activeTab].id
+    setTracker(prev => ({
+      ...prev,
+      tabs: prev.tabs.map(tab =>
+        tab.id !== tabId ? tab : {
+          ...tab,
+          sections: [...tab.sections, newSection]
+        }
+      )
+    }))
+  }
+
+  function handleAddField(sectionId: string) {
+    const newField: CheckboxField = {
+      id: crypto.randomUUID(),
+      label: "New Field",
+      type: "checkbox",
+      checked: false,
+      weight: 1
+    }
+    const tabId = tracker.tabs[activeTab].id
+    setTracker(prev => ({
+      ...prev,
+      tabs: prev.tabs.map(tab =>
+        tab.id !== tabId ? tab : {
+          ...tab,
+          sections: tab.sections.map(section =>
+            section.id !== sectionId ? section : {
+              ...section,
+              fields: [...section.fields, newField]
+            }
+          )
+        }
+      )
+    }))
+  }
+
+  function handleTabDelete(tabId: string) {
+    setTracker(prev => ({
+      ...prev,
+      tabs: prev.tabs.filter(tab => tab.id !== tabId)
+    }))
+    setActiveTab(0)
+    setEditTarget(null)
+  }
+
+  function handleSectionDelete(tabId: string, sectionId: string) {
+    setTracker(prev => ({
+      ...prev,
+      tabs: prev.tabs.map(tab =>
+        tab.id !== tabId ? tab : {
+          ...tab,
+          sections: tab.sections.filter(section => section.id !== sectionId)
+        }
+      )
+    }))
+    setEditTarget(null)
+  }
+
+  function handleFieldDelete(sectionId: string, fieldId: string) {
+    const tabId = tracker.tabs[activeTab].id
+    setTracker(prev => ({
+      ...prev,
+      tabs: prev.tabs.map(tab =>
+        tab.id !== tabId ? tab : {
+          ...tab,
+          sections: tab.sections.map(section =>
+            section.id !== sectionId ? section : {
+              ...section,
+              fields: section.fields.filter(field => field.id !== fieldId)
+            }
+          )
+        }
+      )
+    }))
+    setEditTarget(null)
+  }
 
   function handleTrackerEdit(updatedTracker: Tracker) {
     setTracker(updatedTracker)
@@ -88,13 +184,16 @@ export function TrackerView({ tracker: initialTracker }: Props) {
 
   const fields = tracker.tabs.flatMap(tab => tab.sections.flatMap(section => section.fields))
 
+  const totalWeight = fields.reduce((sum, field) => sum + field.weight, 0)
+
   const totalProgress = fields.reduce((sum, field) => {
-    if (field.type === "checkbox") return sum + (field.checked ? 1 : 0)
-    if (field.type === "number") return sum + (field.value / field.max)
-    return sum
+    const contribution = field.type === "checkbox"
+      ? (field.checked ? 1 : 0)
+      : field.value / field.max
+    return sum + (contribution * field.weight)
   }, 0)
 
-  const percentage = fields.length === 0 ? 0 : (totalProgress / fields.length) * 100
+  const percentage = totalWeight === 0 ? 0 : (totalProgress / totalWeight) * 100
 
   
 return (
@@ -120,9 +219,10 @@ return (
           {isEditMode && (
             <button onClick={() => setEditTarget({ type: "tab", item: tab })}>✏️</button>
           )}
+          
         </div>
       ))}
-      {isEditMode && <button>+ Tab</button>}
+      {isEditMode && <button onClick={handleAddTab}>+ Tab</button>}
     </div>
 
     <TabView
@@ -130,6 +230,8 @@ return (
       onFieldChange={(sectionId, fieldId, value) => handleFieldChange(tracker.tabs[activeTab].id, sectionId, fieldId, value)}
       isEditMode={isEditMode}
       onEditTarget={setEditTarget}
+      onAddSection={handleAddSection}
+      onAddField={handleAddField}
     />
 
     {editTarget && (
@@ -142,7 +244,9 @@ return (
           else if (updated.type === "field") handleFieldEdit(updated.sectionId, updated.item)
         }}
         onDelete={() => {
-          setEditTarget(null)
+          if (editTarget.type === "tab") handleTabDelete(editTarget.item.id)
+          else if (editTarget.type === "section") handleSectionDelete(editTarget.tabId, editTarget.item.id)
+          else if (editTarget.type === "field") handleFieldDelete(editTarget.sectionId, editTarget.item.id)
         }}
         onClose={() => setEditTarget(null)}
       />

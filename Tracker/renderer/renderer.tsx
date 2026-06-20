@@ -13,9 +13,10 @@ export function renderField(field: TrackerField, onFieldChange: (fieldId: string
       )
     case "number":
       return (
-        <ProgressNumber
-          label={field.label}
-          max={field.max}
+        <ProgressNumber 
+          label={field.label} 
+          max={field.max} 
+          value={field.value}
           onChange={(value) => onFieldChange(field.id, value)}
         />
       )
