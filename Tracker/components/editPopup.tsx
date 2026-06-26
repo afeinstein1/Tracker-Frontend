@@ -26,7 +26,9 @@ export function EditPopup({ target, onSave, onDelete, onClose }: Props) {
   const [isPublic, setIsPublic] = useState(
     target.type === "tracker" ? target.item.is_public : false
   )
-
+  const [columns, setColumns] = useState(
+    target.type === "section" ? target.item.columns : []
+  )
 
   
   function handleSave() {
@@ -35,7 +37,7 @@ export function EditPopup({ target, onSave, onDelete, onClose }: Props) {
     } else if (target.type === "tab") {
       onSave({ ...target, item: { ...target.item, title } })
     } else if (target.type === "section") {
-      onSave({ ...target, item: { ...target.item, title } })
+      onSave({ ...target, item: { ...target.item, title, columns } })
     } else if (target.type === "field") {
     const updatedField: TrackerField = fieldType === "checkbox"
       ? { ...target.item, label: title, type: "checkbox", checked: target.item.type === "checkbox" ? target.item.checked : false, weight }
@@ -88,7 +90,40 @@ export function EditPopup({ target, onSave, onDelete, onClose }: Props) {
                 Make this tracker public
               </label>
             )}
-
+            {target.type === "section" && (
+              <div>
+                <p style={{ margin: '0 0 8px 0', fontWeight: 600 }}>Extra Columns</p>
+                {columns.map((col, index) => (
+                  <div key={col.id} style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
+                    <input
+                      value={col.label}
+                      onChange={e => setColumns(prev => prev.map((c, i) =>
+                        i === index ? { ...c, label: e.target.value } : c
+                      ))}
+                      placeholder="Column name"
+                      style={{ flex: 1, padding: '4px' }}
+                    />
+                    <select
+                      value={col.type}
+                      onChange={e => setColumns(prev => prev.map((c, i) =>
+                        i === index ? { ...c, type: e.target.value as "text" | "image" } : c
+                      ))}
+                      style={{ padding: '4px' }}
+                    >
+                      <option value="text">Text</option>
+                      <option value="image">Image</option>
+                    </select>
+                    <button onClick={() => setColumns(prev => prev.filter((_, i) => i !== index))}
+                      style={{ color: 'red' }}>✕</button>
+                  </div>
+                ))}
+                <button onClick={() => setColumns(prev => [...prev, {
+                  id: crypto.randomUUID(),
+                  label: 'New Column',
+                  type: 'text' as const
+                }])}>+ Add Column</button>
+              </div>
+            )}
             {target.type === "field" && (
               <>
                 <label>

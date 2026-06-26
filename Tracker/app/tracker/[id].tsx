@@ -1,6 +1,6 @@
 import { useLocalSearchParams } from "expo-router"
 import { useEffect, useState } from "react"
-import { loadTracker, saveTracker, saveTrackerValues } from "@/lib/trackerService"
+import { loadTracker, saveColumnValues, saveTracker, saveTrackerValues } from "@/lib/trackerService"
 import { TrackerView } from "@/renderer/TrackerRenderer"
 import { Tracker } from "@/Types/field"
 
@@ -30,6 +30,7 @@ export default function TrackerPage() {
     try {
       await saveTracker(updatedTracker)
       await saveTrackerValues(updatedTracker)
+      await saveColumnValues(updatedTracker)
     } catch (e: any) {
       setError(e.message)
     }
