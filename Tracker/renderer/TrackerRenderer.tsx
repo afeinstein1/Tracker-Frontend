@@ -7,9 +7,10 @@ import { EditPopup } from "@/components/editPopup"
 type Props = {
   tracker: Tracker
   onSave?: (tracker: Tracker) => void
+
 }
 
-export function TrackerView({ tracker: initialTracker, onSave }: Props) {
+export function TrackerView({ tracker: initialTracker, onSave,  }: Props) {
   const [tracker, setTracker] = useState(initialTracker)
   const [activeTab, setActiveTab] = useState(0)
   const [editTarget, setEditTarget] = useState<EditTarget | null>(null)
@@ -35,12 +36,33 @@ export function TrackerView({ tracker: initialTracker, onSave }: Props) {
       tabs: [...prev.tabs, newTab]
     }))
   }
-
+  function handleColumnValueChange(tabId: string, sectionId: string, fieldId: string, columnId: string, value: string) {
+    setTracker(prev => ({
+      ...prev,
+      tabs: prev.tabs.map(tab =>
+        tab.id !== tabId ? tab : {
+          ...tab,
+          sections: tab.sections.map(section =>
+            section.id !== sectionId ? section : {
+              ...section,
+              fields: section.fields.map(field =>
+                field.id !== fieldId ? field : {
+                  ...field,
+                  columnValues: { ...field.columnValues, [columnId]: value }
+                }
+              )
+            }
+          )
+        }
+      )
+    }))
+  }
 
   function handleAddSection() {
     const newSection: TrackerSection = {
       id: crypto.randomUUID(),
       title: "New Section",
+      columns: [],  // add this
       fields: []
     }
     const tabId = tracker.tabs[activeTab].id
@@ -61,7 +83,8 @@ export function TrackerView({ tracker: initialTracker, onSave }: Props) {
       label: "New Field",
       type: "checkbox",
       checked: false,
-      weight: 1
+      weight: 1,
+      columnValues: {}  // add this
     }
     const tabId = tracker.tabs[activeTab].id
     setTracker(prev => ({
@@ -241,9 +264,10 @@ return (
     {tracker.tabs.length === 0 ? (
       <p>No tabs yet. {isEditMode ? "Click + Tab to add one." : "Click Edit to get started."}</p>
     ) : (
-      <TabView
+     <TabView
         tab={tracker.tabs[activeTab]}
         onFieldChange={(sectionId, fieldId, value) => handleFieldChange(tracker.tabs[activeTab].id, sectionId, fieldId, value)}
+        onColumnValueChange={(sectionId, fieldId, columnId, value) => handleColumnValueChange(tracker.tabs[activeTab].id, sectionId, fieldId, columnId, value)}
         isEditMode={isEditMode}
         onEditTarget={setEditTarget}
         onAddSection={handleAddSection}

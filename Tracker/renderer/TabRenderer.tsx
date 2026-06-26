@@ -5,13 +5,14 @@ import { Meter } from "@/components/Meter"
 type Props = {
   tab: TrackerTab
   onFieldChange: (sectionId: string, fieldId: string, value: boolean | number) => void
+  onColumnValueChange: (sectionId: string, fieldId: string, columnId: string, value: string) => void
   isEditMode: boolean
   onEditTarget: (target: EditTarget) => void
   onAddSection: () => void
   onAddField: (sectionId: string) => void
 }
 
-export function TabView({ tab, onFieldChange, isEditMode, onEditTarget, onAddSection, onAddField }: Props) {
+export function TabView({ tab, onFieldChange, onColumnValueChange, isEditMode, onEditTarget, onAddSection, onAddField }: Props) {
   const fields = tab.sections.flatMap(section => section.fields)
 
   const totalWeight = fields.reduce((sum, field) => sum + field.weight, 0)
@@ -33,6 +34,7 @@ export function TabView({ tab, onFieldChange, isEditMode, onEditTarget, onAddSec
           key={section.id}
           section={section}
           onFieldChange={(fieldId, value) => onFieldChange(section.id, fieldId, value)}
+          onColumnValueChange={(fieldId, columnId, value) => onColumnValueChange(section.id, fieldId, columnId, value)}
           isEditMode={isEditMode}
           onEditTarget={onEditTarget}
           tabId={tab.id}
