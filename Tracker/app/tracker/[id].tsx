@@ -1,4 +1,4 @@
-import { useLocalSearchParams } from "expo-router"
+import { Stack, useLocalSearchParams, useRouter } from "expo-router"
 import { useEffect, useState } from "react"
 import { loadTracker, saveColumnValues, saveTracker, saveTrackerValues } from "@/lib/trackerService"
 import { TrackerView } from "@/renderer/TrackerRenderer"
@@ -40,5 +40,13 @@ export default function TrackerPage() {
   if (error) return <p>Error: {error}</p>
   if (!tracker) return <p>Tracker not found</p>
 
-  return <TrackerView tracker={tracker} onSave={handleSave} />
+  const router = useRouter()
+
+  return (
+    <div>
+      <Stack.Screen options={{ headerShown: false }} />
+      <button onClick={() => router.push('/')} style={{ margin: '16px' }}>← My Trackers</button>
+      <TrackerView tracker={tracker} onSave={handleSave} />
+    </div>
+  )
 }

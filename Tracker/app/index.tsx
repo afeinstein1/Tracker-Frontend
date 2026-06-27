@@ -2,7 +2,10 @@ import { useEffect, useState } from "react"
 import { supabase } from '../lib/supabase'
 import { loadUserTrackers, createTracker, deleteTracker } from '../lib/trackerService'
 import { Tracker } from "@/Types/field"
+import { useFocusEffect } from "expo-router"
+import { useCallback } from "react"
 import { useRouter } from "expo-router"
+import '@/css/global.css'
 
 export default function Index() {
   const [trackers, setTrackers] = useState<Tracker[]>([])
@@ -10,9 +13,12 @@ export default function Index() {
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
 
-  useEffect(() => {
-    fetchTrackers()
-  }, [])
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchTrackers()
+    }, [])
+  )
 
   async function fetchTrackers() {
     try {
@@ -35,14 +41,18 @@ export default function Index() {
     }
   }
 
-  async function handleDelete(trackerId: string) {
-    try {
-      await deleteTracker(trackerId)
-      setTrackers(prev => prev.filter(t => t.id !== trackerId))
-    } catch (e: any) {
-      setError(e.message)
-    }
+const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
+
+async function handleDelete() {
+  if (!pendingDeleteId) return
+  try {
+    await deleteTracker(pendingDeleteId)
+    setTrackers(prev => prev.filter(t => t.id !== pendingDeleteId))
+    setPendingDeleteId(null)
+  } catch (e: any) {
+    setError(e.message)
   }
+}
 
   async function handleLogout() {
     await supabase.auth.signOut()
@@ -78,11 +88,37 @@ export default function Index() {
               <h2 style={{ margin: 0 }}>{tracker.title}</h2>
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button onClick={() => router.push(`/tracker/${tracker.id}`)}>Open</button>
-                <button onClick={() => handleDelete(tracker.id)} style={{ color: 'red' }}>Delete</button>
+                <button onClick={() => setPendingDeleteId(tracker.id)} style={{ color: 'red' }}>Delete</button>
                 
               </div>
             </div>
           ))}
+        </div>
+      )}
+      {pendingDeleteId && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '12px',
+            padding: '24px',
+            minWidth: '300px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px'
+          }}>
+            <h2 style={{ margin: 0 }}>Delete Tracker</h2>
+            <p>This will delete the entire tracker and all its tabs, sections, and fields.</p>
+            <p>Are you sure?</p>
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+              <button onClick={() => setPendingDeleteId(null)}>Go Back</button>
+              <button onClick={handleDelete} style={{ color: 'red' }}>Confirm Delete</button>
+            </div>
+          </div>
         </div>
       )}
     </div>

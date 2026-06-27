@@ -10,11 +10,43 @@ export async function saveTracker(tracker: Tracker): Promise<void> {
     .upsert({ id: tracker.id, owner_id: user.id, title: tracker.title, is_public: tracker.is_public })
   if (trackerError) throw trackerError
 
+  // Delete removed tabs
+  const { data: existingTabs } = await supabase
+    .from('tracker_tabs')
+    .select('id')
+    .eq('tracker_id', tracker.id)
+  if (existingTabs) {
+    const currentTabIds = tracker.tabs.map(tab => tab.id)
+    const toDelete = existingTabs
+      .filter((tab: any) => !currentTabIds.includes(tab.id))
+      .map((tab: any) => tab.id)
+    if (toDelete.length > 0) {
+      const { error } = await supabase.from('tracker_tabs').delete().in('id', toDelete)
+      if (error) throw error
+    }
+  }
+
   for (const [tabIndex, tab] of tracker.tabs.entries()) {
     const { error: tabError } = await supabase
       .from('tracker_tabs')
       .upsert({ id: tab.id, tracker_id: tracker.id, title: tab.title, order: tabIndex })
     if (tabError) throw tabError
+
+    // Delete removed sections
+    const { data: existingSections } = await supabase
+      .from('tracker_sections')
+      .select('id')
+      .eq('tab_id', tab.id)
+    if (existingSections) {
+      const currentSectionIds = tab.sections.map(s => s.id)
+      const toDelete = existingSections
+        .filter((s: any) => !currentSectionIds.includes(s.id))
+        .map((s: any) => s.id)
+      if (toDelete.length > 0) {
+        const { error } = await supabase.from('tracker_sections').delete().in('id', toDelete)
+        if (error) throw error
+      }
+    }
 
     for (const [sectionIndex, section] of tab.sections.entries()) {
       const { error: sectionError } = await supabase
@@ -22,11 +54,43 @@ export async function saveTracker(tracker: Tracker): Promise<void> {
         .upsert({ id: section.id, tab_id: tab.id, title: section.title, order: sectionIndex })
       if (sectionError) throw sectionError
 
+      // Delete removed columns
+      const { data: existingColumns } = await supabase
+        .from('section_columns')
+        .select('id')
+        .eq('section_id', section.id)
+      if (existingColumns) {
+        const currentColumnIds = section.columns.map(col => col.id)
+        const toDelete = existingColumns
+          .filter((col: any) => !currentColumnIds.includes(col.id))
+          .map((col: any) => col.id)
+        if (toDelete.length > 0) {
+          const { error } = await supabase.from('section_columns').delete().in('id', toDelete)
+          if (error) throw error
+        }
+      }
+
       for (const [columnIndex, column] of section.columns.entries()) {
         const { error: columnError } = await supabase
           .from('section_columns')
           .upsert({ id: column.id, section_id: section.id, label: column.label, type: column.type, order: columnIndex })
         if (columnError) throw columnError
+      }
+
+      // Delete removed fields
+      const { data: existingFields } = await supabase
+        .from('tracker_fields')
+        .select('id')
+        .eq('section_id', section.id)
+      if (existingFields) {
+        const currentFieldIds = section.fields.map(f => f.id)
+        const toDelete = existingFields
+          .filter((f: any) => !currentFieldIds.includes(f.id))
+          .map((f: any) => f.id)
+        if (toDelete.length > 0) {
+          const { error } = await supabase.from('tracker_fields').delete().in('id', toDelete)
+          if (error) throw error
+        }
       }
 
       for (const [fieldIndex, field] of section.fields.entries()) {
@@ -45,6 +109,66 @@ export async function saveTracker(tracker: Tracker): Promise<void> {
       }
     }
   }
+}
+const IMAGE_LIMIT = 50
+
+export async function getUserImageCount(): Promise<number> {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+
+  const { data, error } = await supabase
+    .from('user_image_usage')
+    .select('image_count')
+    .eq('user_id', user.id)
+    .single()
+
+  if (error) return 0
+  return data.image_count
+}
+
+export async function uploadImage(file: File, fieldId: string): Promise<string> {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+
+  const count = await getUserImageCount()
+  if (count >= IMAGE_LIMIT) throw new Error(`Image limit of ${IMAGE_LIMIT} reached`)
+
+  const ext = file.name.split('.').pop()
+  const path = `${user.id}/${fieldId}-${crypto.randomUUID()}.${ext}`
+
+  const { error: uploadError } = await supabase.storage
+    .from('tracker-images')
+    .upload(path, file)
+  if (uploadError) throw uploadError
+
+  const { data, error: urlError } = await supabase.storage
+    .from('tracker-images')
+    .createSignedUrl(path, 60 * 60 * 24 * 365)
+  if (urlError) throw urlError
+
+  const { error: countError } = await supabase
+    .from('user_image_usage')
+    .upsert({ user_id: user.id, image_count: count + 1 })
+  if (countError) throw countError
+
+  return data.signedUrl
+}
+
+export async function deleteImage(url: string): Promise<void> {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+
+  const path = url.split('/tracker-images/')[1]
+  const { error } = await supabase.storage
+    .from('tracker-images')
+    .remove([path])
+  if (error) throw error
+
+  const count = await getUserImageCount()
+  const { error: countError } = await supabase
+    .from('user_image_usage')
+    .upsert({ user_id: user.id, image_count: Math.max(0, count - 1) })
+  if (countError) throw countError
 }
 
 export async function saveTrackerValues(tracker: Tracker): Promise<void> {
