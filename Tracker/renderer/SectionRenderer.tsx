@@ -1,5 +1,6 @@
 import { EditTarget, TrackerSection } from "@/Types/field"
 import { renderField } from "./renderer"
+import { ImageField } from '@/components/ImageField'
 
 type Props = {
   section: TrackerSection
@@ -53,7 +54,19 @@ export function TrackerSectionView({ section, onFieldChange, onColumnValueChange
                 style={{ width: '100%', padding: '4px' }}
               />
             ) : (
-              <div>image placeholder</div>
+              <div>{col.type === 'image' ? (
+                <ImageField
+                  fieldId={field.id}
+                  value={field.columnValues[col.id] ?? ''}
+                  onChange={url => onColumnValueChange(field.id, col.id, url)}
+                />
+              ) : (
+                <input
+                  value={field.columnValues[col.id] ?? ''}
+                  onChange={e => onColumnValueChange(field.id, col.id, e.target.value)}
+                  style={{ width: '100%', padding: '4px' }}
+                />
+              )}</div>
             )}
           </div>
         ))}

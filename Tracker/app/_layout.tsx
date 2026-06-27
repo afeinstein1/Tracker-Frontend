@@ -35,5 +35,5 @@ export default function RootLayout() {
 
   if (loading) return null
 
-  return <Stack />
+  return <Stack screenOptions={{ headerShown: false }} />
 }
