@@ -51,11 +51,11 @@ export function ImageField({ fieldId, value, onChange }: Props) {
     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
       {value ? (
         <>
-          <img
+            <img
             src={value}
             alt="field image"
-            style={{ width: '48px', height: '48px', objectFit: 'cover', borderRadius: '4px' }}
-          />
+            style={{ width: '100%', height: '100%', maxHeight: '80px', objectFit: 'cover', borderRadius: '4px' }}
+            />
           <button onClick={handleDelete} disabled={uploading} style={{ color: 'red' }}>
             {uploading ? '...' : '✕'}
           </button>

@@ -5,6 +5,7 @@ import { Tracker } from "@/Types/field"
 import { useFocusEffect } from "expo-router"
 import { useCallback } from "react"
 import { useRouter } from "expo-router"
+import '@/css/global.css'
 
 export default function Index() {
   const [trackers, setTrackers] = useState<Tracker[]>([])

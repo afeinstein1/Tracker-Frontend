@@ -1,6 +1,7 @@
 import { Stack, useRouter, useSegments } from "expo-router"
 import { useEffect, useState } from "react"
-import { supabase } from "@/lib/supabase" // adjust to your actual path
+import { supabase } from "@/lib/supabase" 
+import '@/css/global.css'
 
 export default function RootLayout() {
   const [session, setSession] = useState<any>(null)
@@ -35,5 +36,9 @@ export default function RootLayout() {
 
   if (loading) return null
 
-  return <Stack screenOptions={{ headerShown: false }} />
+return (
+    <div style={{ minHeight: '100vh', backgroundColor: 'var(--color-background)', color: 'var(--color-text)' }}>
+      <Stack screenOptions={{ headerShown: false }} />
+    </div>
+  )
 }

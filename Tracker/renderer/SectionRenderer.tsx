@@ -28,17 +28,17 @@ export function TrackerSectionView({ section, onFieldChange, onColumnValueChange
       </div>
 
       {section.columns.length > 0 && (
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '4px', paddingLeft: '8px' }}>
+        <div style={{ display: 'flex', gap: '32px', marginBottom: '4px', paddingLeft: '8px' }}>
           <div style={{ flex: 2 }}>Field</div>
-          {section.columns.map(col => (
-            <div key={col.id} style={{ flex: 1, fontWeight: 600 }}>{col.label}</div>
-          ))}
+            {section.columns.map(col => (
+              <div key={col.id} style={{ flex: 1, fontWeight: 600, textAlign: 'center' }}>{col.label}</div>
+            ))}
           {isEditMode && <div style={{ width: '24px' }} />}
         </div>
       )}
 
       {section.fields.map(field => (
-        <div key={field.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+        <div key={field.id} style={{ display: 'flex', alignItems: 'center', gap: '32px', marginBottom: '8px', minHeight: '56px' }}>
           <div style={{ flex: 2, display: 'flex', alignItems: 'center', gap: '4px' }}>
             {renderField(field, onFieldChange)}
             {isEditMode && (
@@ -46,12 +46,12 @@ export function TrackerSectionView({ section, onFieldChange, onColumnValueChange
             )}
           </div>
         {section.columns.map(col => (
-          <div key={col.id} style={{ flex: 1, paddingLeft: '64px', borderLeft: '1px solid #eee' }}>
+          <div key={col.id} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', alignSelf: 'stretch' }}>
             {col.type === 'text' ? (
-              <input
+              <textarea
                 value={field.columnValues[col.id] ?? ''}
                 onChange={e => onColumnValueChange(field.id, col.id, e.target.value)}
-                style={{ width: '100%', padding: '4px' }}
+                style={{ width: '100%', height: '80%', padding: '4px', resize: 'none', verticalAlign: 'top' }}
               />
             ) : (
               <div>{col.type === 'image' ? (
@@ -59,6 +59,7 @@ export function TrackerSectionView({ section, onFieldChange, onColumnValueChange
                   fieldId={field.id}
                   value={field.columnValues[col.id] ?? ''}
                   onChange={url => onColumnValueChange(field.id, col.id, url)}
+                  
                 />
               ) : (
                 <input
