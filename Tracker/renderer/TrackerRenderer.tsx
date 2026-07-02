@@ -15,6 +15,21 @@ export function TrackerView({ tracker: initialTracker, onSave,  }: Props) {
   const [activeTab, setActiveTab] = useState(0)
   const [editTarget, setEditTarget] = useState<EditTarget | null>(null)
   const [isEditMode, setIsEditMode] = useState(false)
+  const tabPercentages = Object.fromEntries(
+  tracker.tabs.map(tab => {
+    const fields = tab.sections.flatMap(s => s.fields)
+    const totalWeight = fields.reduce((sum, f) => sum + f.weight, 0)
+    const totalProgress = fields.reduce((sum, field) => {
+      let contribution = 0
+      if (field.type === "checkbox") contribution = field.checked ? 1 : 0
+      else if (field.type === "number") contribution = field.value / field.max
+      else if (field.type === "dropdown") contribution = field.selected === -1 ? 0 : field.selected / (field.options.length - 1)
+      return sum + (contribution * field.weight)
+    }, 0)
+    return [tab.id, totalWeight === 0 ? 0 : (totalProgress / totalWeight) * 100]
+  })
+)
+  
 
   useEffect(() => {
     if (!onSave) return
@@ -84,7 +99,7 @@ export function TrackerView({ tracker: initialTracker, onSave,  }: Props) {
       type: "checkbox",
       checked: false,
       weight: 1,
-      columnValues: {}  // add this
+      columnValues: {}
     }
     const tabId = tracker.tabs[activeTab].id
     setTracker(prev => ({
@@ -101,6 +116,7 @@ export function TrackerView({ tracker: initialTracker, onSave,  }: Props) {
         }
       )
     }))
+    setEditTarget({ type: "field", item: newField, sectionId })
   }
 
   function handleTabDelete(tabId: string) {
@@ -207,8 +223,10 @@ export function TrackerView({ tracker: initialTracker, onSave,  }: Props) {
                   ...field,
                   ...(field.type === "checkbox"
                     ? { checked: value as boolean }
-                    : { value: value as number })
-                }
+                    : field.type === "number"
+                    ? { value: value as number }
+                    : { selected: value as number })
+                                  }
               )
             }
           )
@@ -221,12 +239,17 @@ export function TrackerView({ tracker: initialTracker, onSave,  }: Props) {
 
   const totalWeight = fields.reduce((sum, field) => sum + field.weight, 0)
 
-  const totalProgress = fields.reduce((sum, field) => {
-    const contribution = field.type === "checkbox"
-      ? (field.checked ? 1 : 0)
-      : field.value / field.max
-    return sum + (contribution * field.weight)
-  }, 0)
+const totalProgress = fields.reduce((sum, field) => {
+  let contribution = 0
+  if (field.type === "checkbox") {
+    contribution = field.checked ? 1 : 0
+  } else if (field.type === "number") {
+    contribution = field.value / field.max
+  } else if (field.type === "dropdown") {
+    contribution = field.selected === -1 ? 0 : field.selected / (field.options.length - 1)
+  }
+  return sum + (contribution * field.weight)
+}, 0)
 
   const percentage = totalWeight === 0 ? 0 : (totalProgress / totalWeight) * 100
 
@@ -266,18 +289,22 @@ return (
     ) : (
      <TabView
         tab={tracker.tabs[activeTab]}
+        allTabs={tracker.tabs}
         onFieldChange={(sectionId, fieldId, value) => handleFieldChange(tracker.tabs[activeTab].id, sectionId, fieldId, value)}
         onColumnValueChange={(sectionId, fieldId, columnId, value) => handleColumnValueChange(tracker.tabs[activeTab].id, sectionId, fieldId, columnId, value)}
         isEditMode={isEditMode}
         onEditTarget={setEditTarget}
         onAddSection={handleAddSection}
         onAddField={handleAddField}
+        overallPercentage={Math.round(percentage)}
+        tabPercentages={tabPercentages}
       />
     )}
 
     {editTarget && (
       <EditPopup
         target={editTarget}
+        tracker={tracker}
         onSave={(updated) => {
           if (updated.type === "tracker") handleTrackerEdit(updated.item)
           else if (updated.type === "tab") handleTabEdit(updated.item)

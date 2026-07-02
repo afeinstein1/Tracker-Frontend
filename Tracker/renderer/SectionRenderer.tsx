@@ -28,12 +28,14 @@ export function TrackerSectionView({ section, onFieldChange, onColumnValueChange
       </div>
 
       {section.columns.length > 0 && (
-        <div style={{ display: 'flex', gap: '32px', marginBottom: '4px', paddingLeft: '8px' }}>
-          <div style={{ flex: 2 }}>Field</div>
-            {section.columns.map(col => (
-              <div key={col.id} style={{ flex: 1, fontWeight: 600, textAlign: 'center' }}>{col.label}</div>
-            ))}
-          {isEditMode && <div style={{ width: '24px' }} />}
+        <div style={{ display: 'flex', gap: '32px', marginBottom: '4px' }}>
+          <div style={{ flex: 2, display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <div>Field</div>
+            {isEditMode && <div style={{ width: '28px' }} />}
+          </div>
+          {section.columns.map(col => (
+            <div key={col.id} style={{ flex: 1, fontWeight: 600, textAlign: 'center' }}>{col.label}</div>
+          ))}
         </div>
       )}
 
@@ -59,7 +61,7 @@ export function TrackerSectionView({ section, onFieldChange, onColumnValueChange
                   fieldId={field.id}
                   value={field.columnValues[col.id] ?? ''}
                   onChange={url => onColumnValueChange(field.id, col.id, url)}
-                  
+                  isEditMode={isEditMode}
                 />
               ) : (
                 <input

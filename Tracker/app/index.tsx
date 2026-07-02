@@ -103,13 +103,14 @@ async function handleDelete() {
           zIndex: 1000
         }}>
           <div style={{
-            backgroundColor: 'white',
+            backgroundColor: 'var(--color-background)',
             borderRadius: '12px',
             padding: '24px',
             minWidth: '300px',
             display: 'flex',
             flexDirection: 'column',
-            gap: '12px'
+            gap: '12px',
+            color: 'var(--color-text)'
           }}>
             <h2 style={{ margin: 0 }}>Delete Tracker</h2>
             <p>This will delete the entire tracker and all its tabs, sections, and fields.</p>

@@ -29,7 +29,7 @@ export async function saveTracker(tracker: Tracker): Promise<void> {
   for (const [tabIndex, tab] of tracker.tabs.entries()) {
     const { error: tabError } = await supabase
       .from('tracker_tabs')
-      .upsert({ id: tab.id, tracker_id: tracker.id, title: tab.title, order: tabIndex })
+      .upsert({ id: tab.id, tracker_id: tracker.id, title: tab.title, order: tabIndex, unlock_condition: tab.unlockCondition ?? null })
     if (tabError) throw tabError
 
     // Delete removed sections
@@ -51,7 +51,7 @@ export async function saveTracker(tracker: Tracker): Promise<void> {
     for (const [sectionIndex, section] of tab.sections.entries()) {
       const { error: sectionError } = await supabase
         .from('tracker_sections')
-        .upsert({ id: section.id, tab_id: tab.id, title: section.title, order: sectionIndex })
+        .upsert({ id: section.id, tab_id: tab.id, title: section.title, order: sectionIndex, unlock_condition: section.unlockCondition ?? null })
       if (sectionError) throw sectionError
 
       // Delete removed columns
@@ -103,6 +103,7 @@ export async function saveTracker(tracker: Tracker): Promise<void> {
             type: field.type,
             weight: field.weight,
             max: field.type === 'number' ? field.max : null,
+            options: field.type === 'dropdown' ? field.options : null,
             order: fieldIndex
           })
         if (fieldError) throw fieldError
@@ -186,7 +187,7 @@ export async function saveTrackerValues(tracker: Tracker): Promise<void> {
         field_id: field.id,
         user_id: user.id,
         checked: field.type === 'checkbox' ? field.checked : false,
-        value: field.type === 'number' ? field.value : 0
+        value: field.type === 'number' ? field.value : field.type === 'dropdown' ? field.selected : 0
       }, { onConflict: 'field_id,user_id' })
     if (error) throw error
   }
@@ -271,6 +272,7 @@ export async function loadTracker(trackerId: string): Promise<Tracker> {
   const tabs: TrackerTab[] = tabsData.map(tab => ({
     id: tab.id,
     title: tab.title,
+    unlockCondition: tab.unlock_condition ?? undefined,
     sections: sectionsData
       .filter(section => section.tab_id === tab.id)
       .map(section => ({
@@ -301,7 +303,7 @@ export async function loadTracker(trackerId: string): Promise<Tracker> {
                 weight: field.weight,
                 columnValues
               }
-            } else {
+            } else if (field.type === 'number') {
               return {
                 id: field.id,
                 label: field.label,
@@ -311,8 +313,19 @@ export async function loadTracker(trackerId: string): Promise<Tracker> {
                 weight: field.weight,
                 columnValues
               }
+            } else {
+              return {
+                id: field.id,
+                label: field.label,
+                type: 'dropdown' as const,
+                options: field.options ?? [],
+                selected: value?.value ?? -1,
+                weight: field.weight,
+                columnValues
+              }
             }
-          })
+          }),
+          unlockCondition: section.unlock_condition ?? undefined,
       }))
   }))
 

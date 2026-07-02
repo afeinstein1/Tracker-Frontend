@@ -6,9 +6,10 @@ type Props = {
   fieldId: string
   value: string
   onChange: (url: string) => void
+  isEditMode: boolean
 }
 
-export function ImageField({ fieldId, value, onChange }: Props) {
+export function ImageField({ fieldId, value, onChange, isEditMode }: Props) {
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -48,29 +49,51 @@ export function ImageField({ fieldId, value, onChange }: Props) {
   }
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+    <div style={{ width: '100%', maxHeight: '80px' }}>
       {value ? (
-        <>
-            <img
+        <div style={{ position: 'relative', display: 'inline-block', width: '100%' }}>
+          <img
             src={value}
             alt="field image"
-            style={{ width: '100%', height: '100%', maxHeight: '80px', objectFit: 'cover', borderRadius: '4px' }}
-            />
-          <button onClick={handleDelete} disabled={uploading} style={{ color: 'red' }}>
-            {uploading ? '...' : '✕'}
-          </button>
-        </>
-      ) : (
-        <label style={{ cursor: 'pointer' }}>
-          {uploading ? 'Uploading...' : '+ Image'}
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleUpload}
-            disabled={uploading}
-            style={{ display: 'none' }}
+            style={{ width: '100%', maxHeight: '80px', objectFit: 'cover', borderRadius: '4px', display: 'block' }}
           />
-        </label>
+          {isEditMode && (
+            <button
+              onClick={handleDelete}
+              disabled={uploading}
+              style={{
+                position: 'absolute',
+                top: '4px',
+                right: '4px',
+                color: 'red',
+                background: 'white',
+                border: 'none',
+                borderRadius: '50%',
+                width: '20px',
+                height: '20px',
+                padding: 0,
+                lineHeight: '20px',
+                textAlign: 'center',
+                cursor: 'pointer'
+              }}
+            >
+              {uploading ? '...' : '✕'}
+            </button>
+          )}
+        </div>
+      ) : (
+        isEditMode && (
+          <label style={{ cursor: 'pointer' }}>
+            {uploading ? 'Uploading...' : '+ Image'}
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleUpload}
+              disabled={uploading}
+              style={{ display: 'none' }}
+            />
+          </label>
+        )
       )}
       {error && <span style={{ color: 'red', fontSize: '12px' }}>{error}</span>}
     </div>

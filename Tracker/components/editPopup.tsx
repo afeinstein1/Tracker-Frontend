@@ -1,14 +1,15 @@
 import { useState } from "react"
-import { EditTarget, TrackerField } from "@/Types/field"
+import { EditTarget, SectionUnlockCondition, TabUnlockCondition, Tracker, TrackerField } from "@/Types/field"
 
 type Props = {
   target: EditTarget
   onSave: (updated: EditTarget) => void
+  tracker: Tracker
   onDelete: () => void
   onClose: () => void
 }
 
-export function EditPopup({ target, onSave, onDelete, onClose }: Props) {
+export function EditPopup({ tracker, target, onSave, onDelete, onClose }: Props) {
   const [confirming, setConfirming] = useState(false)
 
   const [title, setTitle] = useState(
@@ -29,19 +30,29 @@ export function EditPopup({ target, onSave, onDelete, onClose }: Props) {
   const [columns, setColumns] = useState(
     target.type === "section" ? target.item.columns : []
   )
+  const [options, setOptions] = useState(
+    target.type === "field" && target.item.type === "dropdown" 
+      ? target.item.options 
+      : ['Option 1', 'Option 2']
+  )
+  const [unlockCondition, setUnlockCondition] = useState<TabUnlockCondition | SectionUnlockCondition | undefined>(
+    target.type === "tab" || target.type === "section" ? target.item.unlockCondition : undefined
+  )
 
   
   function handleSave() {
     if (target.type === "tracker") {
       onSave({ ...target, item: { ...target.item, title, is_public: isPublic } })
-    } else if (target.type === "tab") {
-      onSave({ ...target, item: { ...target.item, title } })
-    } else if (target.type === "section") {
-      onSave({ ...target, item: { ...target.item, title, columns } })
-    } else if (target.type === "field") {
-    const updatedField: TrackerField = fieldType === "checkbox"
-      ? { ...target.item, label: title, type: "checkbox", checked: target.item.type === "checkbox" ? target.item.checked : false, weight }
-      : { ...target.item, label: title, type: "number", value: target.item.type === "number" ? target.item.value : 0, max, weight }
+      } else if (target.type === "tab") {
+        onSave({ ...target, item: { ...target.item, title, unlockCondition: unlockCondition as TabUnlockCondition } })
+      } else if (target.type === "section") {
+      onSave({ ...target, item: { ...target.item, title, columns, unlockCondition: unlockCondition as any } })
+      } else if (target.type === "field") {
+      const updatedField: TrackerField = fieldType === "checkbox"
+        ? { ...target.item, label: title, type: "checkbox", checked: target.item.type === "checkbox" ? target.item.checked : false, weight, columnValues: target.item.columnValues }
+        : fieldType === "number"
+        ? { ...target.item, label: title, type: "number", value: target.item.type === "number" ? target.item.value : 0, max, weight, columnValues: target.item.columnValues }
+        : { ...target.item, label: title, type: "dropdown", options, selected: target.item.type === "dropdown" ? target.item.selected : 0, weight, columnValues: target.item.columnValues }
       onSave({ ...target, item: updatedField })
     }
   }
@@ -59,15 +70,16 @@ export function EditPopup({ target, onSave, onDelete, onClose }: Props) {
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       zIndex: 1000
     }}>
-      <div style={{
-        backgroundColor: 'white',
-        borderRadius: '12px',
-        padding: '24px',
-        minWidth: '300px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '12px'
-      }}>
+    <div style={{
+      backgroundColor: 'var(--color-background)',
+      borderRadius: '12px',
+      padding: '24px',
+      minWidth: '300px',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '12px',
+      color: 'var(--color-text)'
+    }}>
         <h2 style={{ margin: 0 }}>Edit {target.type}</h2>
 
         {!confirming ? (
@@ -80,6 +92,8 @@ export function EditPopup({ target, onSave, onDelete, onClose }: Props) {
                 style={{ display: 'block', width: '100%', marginTop: '4px' }}
               />
             </label>
+            
+            
             {target.type === "tracker" && (
               <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <input
@@ -90,38 +104,97 @@ export function EditPopup({ target, onSave, onDelete, onClose }: Props) {
                 Make this tracker public
               </label>
             )}
-            {target.type === "section" && (
+            {(target.type === "tab" || target.type === "section") && (
               <div>
-                <p style={{ margin: '0 0 8px 0', fontWeight: 600 }}>Extra Columns</p>
-                {columns.map((col, index) => (
-                  <div key={col.id} style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
+                <label>
+                  Unlock Condition
+                  <select
+                    value={unlockCondition?.type ?? 'none'}
+                    onChange={e => {
+                      const type = e.target.value
+                      if (type === 'none') setUnlockCondition(undefined)
+                      else if (type === 'overall') setUnlockCondition({ type: 'overall', percentage: 50 })
+                      else if (type === 'tab') setUnlockCondition({ type: 'tab', tabId: '', percentage: 50 })
+                      else if (type === 'field' && target.type === 'section') setUnlockCondition({ type: 'field', fieldId: '' })
+                    }}
+                    style={{ display: 'block', width: '100%', marginTop: '4px' }}
+                  >
+                    <option value="none">No lock</option>
+                    <option value="overall">Overall completion %</option>
+                    <option value="tab">Another tab's completion %</option>
+                    {target.type === "section" && <option value="field">Specific field complete</option>}
+                  </select>
+                </label>
+
+                {unlockCondition?.type === 'overall' && (
+                  <label>
+                    Percentage
                     <input
-                      value={col.label}
-                      onChange={e => setColumns(prev => prev.map((c, i) =>
-                        i === index ? { ...c, label: e.target.value } : c
-                      ))}
-                      placeholder="Column name"
-                      style={{ flex: 1, padding: '4px' }}
+                      type="number"
+                      value={unlockCondition.percentage}
+                      min={0}
+                      max={100}
+                      onChange={e => setUnlockCondition({ ...unlockCondition, percentage: Number(e.target.value) })}
+                      style={{ display: 'block', width: '100%', marginTop: '4px' }}
                     />
+                  </label>
+                )}
+
+                {unlockCondition?.type === 'tab' && (
+                  <>
+                    <label>
+                      Tab
+                      <select
+                        value={unlockCondition.tabId ?? ''}
+                        onChange={e => setUnlockCondition({ ...unlockCondition, tabId: e.target.value })}
+                        style={{ display: 'block', width: '100%', marginTop: '4px' }}
+                      >
+                        <option value="">Select a tab...</option>
+                        {tracker.tabs.map(tab => (
+                          <option key={tab.id} value={tab.id}>{tab.title}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <label>
+                      Percentage
+                      <input
+                        type="number"
+                        value={unlockCondition.percentage}
+                        min={0}
+                        max={100}
+                        onChange={e => setUnlockCondition({ ...unlockCondition, percentage: Number(e.target.value) })}
+                        style={{ display: 'block', width: '100%', marginTop: '4px' }}
+                      />
+                    </label>
+                  </>
+                )}
+
+                {unlockCondition?.type === 'field' && target.type === 'section' && (
+                  <label>
+                    Field
                     <select
-                      value={col.type}
-                      onChange={e => setColumns(prev => prev.map((c, i) =>
-                        i === index ? { ...c, type: e.target.value as "text" | "image" } : c
-                      ))}
-                      style={{ padding: '4px' }}
+                      value={(unlockCondition as SectionUnlockCondition).fieldId ?? ''}
+                      onChange={e => setUnlockCondition({ ...unlockCondition, fieldId: e.target.value })}
+                      style={{ display: 'block', width: '100%', marginTop: '4px' }}
                     >
-                      <option value="text">Text</option>
-                      <option value="image">Image</option>
+                      <option value="">Select a field...</option>
+                      {tracker.tabs.flatMap(tab =>
+                        tab.sections.flatMap(section =>
+                          section.fields.map(field => (
+                            <option key={field.id} value={field.id}>
+                              {tab.title} → {section.title} → {field.label}
+                            </option>
+                          ))
+                        )
+                      )}
                     </select>
-                    <button onClick={() => setColumns(prev => prev.filter((_, i) => i !== index))}
-                      style={{ color: 'red' }}>✕</button>
-                  </div>
-                ))}
-                <button onClick={() => setColumns(prev => [...prev, {
-                  id: crypto.randomUUID(),
-                  label: 'New Column',
-                  type: 'text' as const
-                }])}>+ Add Column</button>
+                  </label>
+                )}
+                <small style={{ color: 'var(--color-text-muted)' }}>
+                  {target.type === "tab"
+                    ? "Locks this tab until the condition is met"
+                    : "Locks this section until the condition is met"}
+                </small>
               </div>
             )}
             {target.type === "field" && (
@@ -130,11 +203,12 @@ export function EditPopup({ target, onSave, onDelete, onClose }: Props) {
                   Type
                   <select
                     value={fieldType}
-                    onChange={e => setFieldType(e.target.value as "checkbox" | "number")}
+                    onChange={e => setFieldType(e.target.value as "checkbox" | "number" | "dropdown")}
                     style={{ display: 'block', width: '100%', marginTop: '4px' }}
                   >
                     <option value="checkbox">Checkbox</option>
                     <option value="number">Number</option>
+                    <option value="dropdown">Dropdown</option>
                   </select>
                 </label>
 
@@ -159,6 +233,23 @@ export function EditPopup({ target, onSave, onDelete, onClose }: Props) {
                   />
                 </label>
               </>
+            )}
+            {fieldType === "dropdown" && (
+              <div>
+                <p style={{ margin: '0 0 8px 0', fontWeight: 600 }}>Options</p>
+                {options.map((option, index) => (
+                  <div key={index} style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                    <input
+                      value={option}
+                      onChange={e => setOptions(prev => prev.map((o, i) => i === index ? e.target.value : o))}
+                      placeholder={`Option ${index + 1}`}
+                      style={{ flex: 1, padding: '4px' }}
+                    />
+                    <button onClick={() => setOptions(prev => prev.filter((_, i) => i !== index))} style={{ color: 'red' }}>✕</button>
+                  </div>
+                ))}
+                <button onClick={() => setOptions(prev => [...prev, ''])}>+ Add Option</button>
+              </div>
             )}
 
             <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
