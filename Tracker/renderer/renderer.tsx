@@ -1,4 +1,5 @@
 import { CheckboxFieldView } from "@/components/CheckboxField"
+import { DropdownFieldView } from "@/components/DropdownField"
 import { ProgressNumber } from "@/components/NumberField"
 import { TrackerField } from "@/Types/field"
 
@@ -20,5 +21,12 @@ export function renderField(field: TrackerField, onFieldChange: (fieldId: string
           onChange={(value) => onFieldChange(field.id, value)}
         />
       )
+      case "dropdown":
+        return (
+          <DropdownFieldView
+            field={field}
+            onChange={(selected) => onFieldChange(field.id, selected)}
+          />
+        )
   }
 }

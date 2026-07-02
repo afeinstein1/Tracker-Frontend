@@ -15,26 +15,45 @@ export interface NumberField extends Field {
   value: number
   max: number
 }
+export interface DropdownField extends Field {
+  type: "dropdown"
+  options: string[]
+  selected: number 
+}
+export type TrackerField = CheckboxField | NumberField | DropdownField
 
-export type TrackerField = CheckboxField | NumberField
 
+export interface TabUnlockCondition {
+  type: "overall" | "tab"
+  tabId?: string  
+  percentage: number
+}
+
+export interface SectionUnlockCondition {
+  type: "overall" | "tab" | "field"
+  tabId?: string
+  fieldId?: string
+  percentage?: number  
+}
 export interface SectionColumn {
   id: string
   label: string
-  type: "text" | "image"
+  type: "text" | "image" | "dropdown"
 }
 
 export interface TrackerSection {
   id: string
   title: string
-  columns: SectionColumn[]  // new
+  columns: SectionColumn[]
   fields: TrackerField[]
+  unlockCondition?: TabUnlockCondition  
 }
 
 export interface TrackerTab {
   id: string
   title: string
   sections: TrackerSection[]
+  unlockCondition?: TabUnlockCondition  
 }
 
 export interface Tracker {
