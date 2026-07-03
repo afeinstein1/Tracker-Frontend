@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useRouter } from 'expo-router'
+import { OAuthButtons } from '@/components/OAuthButtons'
 
 export default function SignUp() {
   const [email, setEmail] = useState('')
@@ -48,6 +49,7 @@ export default function SignUp() {
         <button onClick={handleSignUp} disabled={loading}>
           {loading ? 'Signing up...' : 'Sign Up'}
         </button>
+        <OAuthButtons />
         <p>Already have an account? <a onClick={() => router.push('/login')} style={{ cursor: 'pointer', color: 'blue' }}>Log in</a></p>
       </div>
     </div>
