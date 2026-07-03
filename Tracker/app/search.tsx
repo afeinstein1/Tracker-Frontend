@@ -80,7 +80,7 @@ export default function Search() {
             }}>
               <h2 style={{ margin: 0 }}>{tracker.title}</h2>
               <div style={{ display: 'flex', gap: '8px' }}>
-                <button onClick={() => router.push(`/tracker/${tracker.id}`)}>Preview</button>
+              <button onClick={() => window.open(`/tracker/${tracker.id}`, '_blank')}>Preview</button>
                 <button onClick={() => handleCopy(tracker.id)}>Copy to My Trackers</button>
               </div>
             </div>

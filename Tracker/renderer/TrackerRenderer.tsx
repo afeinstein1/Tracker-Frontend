@@ -7,10 +7,11 @@ import { EditPopup } from "@/components/editPopup"
 type Props = {
   tracker: Tracker
   onSave?: (tracker: Tracker) => void
-
+  readOnly?: boolean
+  onCopy?: () => void
 }
 
-export function TrackerView({ tracker: initialTracker, onSave,  }: Props) {
+export function TrackerView({ tracker: initialTracker, onSave, readOnly = false, onCopy }: Props) {
   const [tracker, setTracker] = useState(initialTracker)
   const [activeTab, setActiveTab] = useState(0)
   const [editTarget, setEditTarget] = useState<EditTarget | null>(null)
@@ -32,7 +33,7 @@ export function TrackerView({ tracker: initialTracker, onSave,  }: Props) {
   
 
   useEffect(() => {
-    if (!onSave) return
+    if (!onSave || readOnly) return
     const timer = setTimeout(() => {
       onSave(tracker)
     }, 1500)
@@ -262,9 +263,17 @@ return (
       {isEditMode && (
         <button onClick={() => setEditTarget({ type: "tracker", item: tracker })}>✏️</button>
       )}
-      <button onClick={() => setIsEditMode(!isEditMode)} style={{ marginLeft: 'auto' }}>
-        {isEditMode ? "Done" : "Edit"}
-      </button>
+      {readOnly ? (
+        onCopy && (
+          <button onClick={onCopy} style={{ marginLeft: 'auto' }}>
+            Make a Copy
+          </button>
+        )
+      ) : (
+        <button onClick={() => setIsEditMode(!isEditMode)} style={{ marginLeft: 'auto' }}>
+          {isEditMode ? "Done" : "Edit"}
+        </button>
+      )}
     </div>
 
     <Meter label="Overall Progress" value={Math.round(percentage)} maxValue={100} />
@@ -278,7 +287,6 @@ return (
           {isEditMode && (
             <button onClick={() => setEditTarget({ type: "tab", item: tab })}>✏️</button>
           )}
-          
         </div>
       ))}
       {isEditMode && <button onClick={handleAddTab}>+ Tab</button>}
@@ -287,18 +295,21 @@ return (
     {tracker.tabs.length === 0 ? (
       <p>No tabs yet. {isEditMode ? "Click + Tab to add one." : "Click Edit to get started."}</p>
     ) : (
-     <TabView
-        tab={tracker.tabs[activeTab]}
-        allTabs={tracker.tabs}
-        onFieldChange={(sectionId, fieldId, value) => handleFieldChange(tracker.tabs[activeTab].id, sectionId, fieldId, value)}
-        onColumnValueChange={(sectionId, fieldId, columnId, value) => handleColumnValueChange(tracker.tabs[activeTab].id, sectionId, fieldId, columnId, value)}
-        isEditMode={isEditMode}
-        onEditTarget={setEditTarget}
-        onAddSection={handleAddSection}
-        onAddField={handleAddField}
-        overallPercentage={Math.round(percentage)}
-        tabPercentages={tabPercentages}
-      />
+      <div style={{ pointerEvents: readOnly ? 'none' : 'auto' }}>
+        <TabView
+          tab={tracker.tabs[activeTab]}
+          allTabs={tracker.tabs}
+          onFieldChange={(sectionId, fieldId, value) => handleFieldChange(tracker.tabs[activeTab].id, sectionId, fieldId, value)}
+          onColumnValueChange={(sectionId, fieldId, columnId, value) => handleColumnValueChange(tracker.tabs[activeTab].id, sectionId, fieldId, columnId, value)}
+          isEditMode={isEditMode}
+          onEditTarget={setEditTarget}
+          onAddSection={handleAddSection}
+          onAddField={handleAddField}
+          overallPercentage={Math.round(percentage)}
+          tabPercentages={tabPercentages}
+          disabled={readOnly}
+        />
+      </div>
     )}
 
     {editTarget && (
@@ -322,6 +333,3 @@ return (
   </div>
 )
 }
-
-
-

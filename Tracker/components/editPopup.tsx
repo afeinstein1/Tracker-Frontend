@@ -115,14 +115,14 @@ export function EditPopup({ tracker, target, onSave, onDelete, onClose }: Props)
                       if (type === 'none') setUnlockCondition(undefined)
                       else if (type === 'overall') setUnlockCondition({ type: 'overall', percentage: 50 })
                       else if (type === 'tab') setUnlockCondition({ type: 'tab', tabId: '', percentage: 50 })
-                      else if (type === 'field' && target.type === 'section') setUnlockCondition({ type: 'field', fieldId: '' })
+                      else if (type === 'field') setUnlockCondition({ type: 'field', fieldId: '' })
                     }}
                     style={{ display: 'block', width: '100%', marginTop: '4px' }}
                   >
-                    <option value="none">No lock</option>
-                    <option value="overall">Overall completion %</option>
-                    <option value="tab">Another tab's completion %</option>
-                    {target.type === "section" && <option value="field">Specific field complete</option>}
+                  <option value="none">No lock</option>
+                  <option value="overall">Overall completion %</option>
+                  <option value="tab">Another tab's completion %</option>
+                  <option value="field">Specific field complete</option>
                   </select>
                 </label>
 
@@ -169,12 +169,12 @@ export function EditPopup({ tracker, target, onSave, onDelete, onClose }: Props)
                   </>
                 )}
 
-                {unlockCondition?.type === 'field' && target.type === 'section' && (
+                {unlockCondition?.type === 'field' && (
                   <label>
                     Field
                     <select
-                      value={(unlockCondition as SectionUnlockCondition).fieldId ?? ''}
-                      onChange={e => setUnlockCondition({ ...unlockCondition, fieldId: e.target.value })}
+                      value={(unlockCondition as any).fieldId ?? ''}
+                      onChange={e => setUnlockCondition({ ...unlockCondition, fieldId: e.target.value } as any)}
                       style={{ display: 'block', width: '100%', marginTop: '4px' }}
                     >
                       <option value="">Select a field...</option>
@@ -195,6 +195,40 @@ export function EditPopup({ tracker, target, onSave, onDelete, onClose }: Props)
                     ? "Locks this tab until the condition is met"
                     : "Locks this section until the condition is met"}
                 </small>
+              </div>
+            )}
+            {target.type === "section" && (
+              <div>
+                <p style={{ margin: '0 0 8px 0', fontWeight: 600 }}>Extra Columns</p>
+                {columns.map((col, index) => (
+                  <div key={col.id} style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
+                    <input
+                      value={col.label}
+                      onChange={e => setColumns(prev => prev.map((c, i) =>
+                        i === index ? { ...c, label: e.target.value } : c
+                      ))}
+                      placeholder="Column name"
+                      style={{ flex: 1, padding: '4px' }}
+                    />
+                    <select
+                      value={col.type}
+                      onChange={e => setColumns(prev => prev.map((c, i) =>
+                        i === index ? { ...c, type: e.target.value as "text" | "image" | "dropdown" } : c
+                      ))}
+                      style={{ padding: '4px' }}
+                    >
+                      <option value="text">Text</option>
+                      <option value="image">Image</option>
+                    </select>
+                    <button onClick={() => setColumns(prev => prev.filter((_, i) => i !== index))}
+                      style={{ color: 'red' }}>✕</button>
+                  </div>
+                ))}
+                <button onClick={() => setColumns(prev => [...prev, {
+                  id: crypto.randomUUID(),
+                  label: 'New Column',
+                  type: 'text' as const
+                }])}>+ Add Column</button>
               </div>
             )}
             {target.type === "field" && (

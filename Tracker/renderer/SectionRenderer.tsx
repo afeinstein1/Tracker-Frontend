@@ -10,9 +10,10 @@ type Props = {
   onEditTarget: (target: EditTarget) => void
   tabId: string
   onAddField: (sectionId: string) => void
+  disabled?: boolean
 }
 
-export function TrackerSectionView({ section, onFieldChange, onColumnValueChange, isEditMode, onEditTarget, tabId, onAddField }: Props) {
+export function TrackerSectionView({ section, onFieldChange, onColumnValueChange, isEditMode, onEditTarget, tabId, onAddField, disabled = false }: Props) {
   return (
     <div style={{
       border: '2px solid #ccc',
@@ -42,7 +43,7 @@ export function TrackerSectionView({ section, onFieldChange, onColumnValueChange
       {section.fields.map(field => (
         <div key={field.id} style={{ display: 'flex', alignItems: 'center', gap: '32px', marginBottom: '8px', minHeight: '56px' }}>
           <div style={{ flex: 2, display: 'flex', alignItems: 'center', gap: '4px' }}>
-            {renderField(field, onFieldChange)}
+            {renderField(field, onFieldChange, disabled)}
             {isEditMode && (
               <button onClick={() => onEditTarget({ type: "field", item: field, sectionId: section.id })}>✏️</button>
             )}
@@ -53,6 +54,7 @@ export function TrackerSectionView({ section, onFieldChange, onColumnValueChange
               <textarea
                 value={field.columnValues[col.id] ?? ''}
                 onChange={e => onColumnValueChange(field.id, col.id, e.target.value)}
+                readOnly={!isEditMode || disabled}
                 style={{ width: '100%', height: '80%', padding: '4px', resize: 'none', verticalAlign: 'top' }}
               />
             ) : (
@@ -61,12 +63,13 @@ export function TrackerSectionView({ section, onFieldChange, onColumnValueChange
                   fieldId={field.id}
                   value={field.columnValues[col.id] ?? ''}
                   onChange={url => onColumnValueChange(field.id, col.id, url)}
-                  isEditMode={isEditMode}
+                  isEditMode={isEditMode && !disabled}
                 />
               ) : (
                 <input
                   value={field.columnValues[col.id] ?? ''}
                   onChange={e => onColumnValueChange(field.id, col.id, e.target.value)}
+                  readOnly={!isEditMode || disabled}
                   style={{ width: '100%', padding: '4px' }}
                 />
               )}</div>

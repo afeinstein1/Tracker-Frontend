@@ -1,4 +1,4 @@
-import { EditTarget, TrackerTab } from "@/Types/field"
+import { EditTarget, SectionUnlockCondition, TabUnlockCondition, TrackerTab } from "@/Types/field"
 import { TrackerSectionView } from "./SectionRenderer"
 import { Meter } from "@/components/Meter"
 
@@ -13,9 +13,10 @@ type Props = {
   overallPercentage: number
   tabPercentages: Record<string, number>
   allTabs: TrackerTab[]
+  disabled?: boolean
 }
 
-export function TabView({ allTabs, tab, onFieldChange, onColumnValueChange, isEditMode, onEditTarget, onAddSection, onAddField, overallPercentage, tabPercentages }: Props) {
+export function TabView({ allTabs, tab, onFieldChange, onColumnValueChange, isEditMode, onEditTarget, onAddSection, onAddField, overallPercentage, tabPercentages, disabled = false }: Props) {
   const fields = tab.sections.flatMap(section => section.fields)
 
   const totalWeight = fields.reduce((sum, field) => sum + field.weight, 0)
@@ -28,14 +29,8 @@ export function TabView({ allTabs, tab, onFieldChange, onColumnValueChange, isEd
   }, 0)
   const percentage = totalWeight === 0 ? 0 : (totalProgress / totalWeight) * 100
 
-  const isTabLocked = !isEditMode && tab.unlockCondition !== undefined && (
-    tab.unlockCondition.type === "overall"
-      ? overallPercentage < tab.unlockCondition.percentage
-      : tabPercentages[tab.unlockCondition.tabId ?? ''] < tab.unlockCondition.percentage
-  )
-
   function getFieldCompletion(fieldId: string): boolean {
-    const field = tab.sections.flatMap(s => s.fields).find(f => f.id === fieldId)
+    const field = allTabs.flatMap(t => t.sections.flatMap(s => s.fields)).find(f => f.id === fieldId)
     if (!field) return false
     if (field.type === "checkbox") return field.checked
     if (field.type === "number") return field.value >= field.max
@@ -43,15 +38,29 @@ export function TabView({ allTabs, tab, onFieldChange, onColumnValueChange, isEd
     return false
   }
 
+  function getFieldLabel(fieldId: string): string {
+    return allTabs.flatMap(t => t.sections.flatMap(s => s.fields)).find(f => f.id === fieldId)?.label ?? 'a specific field'
+  }
+
+  function getUnlockMessage(condition: TabUnlockCondition | SectionUnlockCondition): string {
+    if (condition.type === "overall") return `${condition.percentage}% overall completion is reached`
+    if (condition.type === "tab") return `${condition.percentage}% completion of "${allTabs.find(t => t.id === condition.tabId)?.title ?? 'another tab'}" is reached`
+    return `"${getFieldLabel(condition.fieldId ?? '')}" is complete`
+  }
+
+  const isTabLocked = !isEditMode && tab.unlockCondition !== undefined && (
+    tab.unlockCondition.type === "overall"
+      ? overallPercentage < (tab.unlockCondition.percentage ?? 0)
+      : tab.unlockCondition.type === "tab"
+      ? (tabPercentages[tab.unlockCondition.tabId ?? ''] ?? 0) < (tab.unlockCondition.percentage ?? 0)
+      : !getFieldCompletion(tab.unlockCondition.fieldId ?? '')
+  )
+
   return (
     <div>
         {isTabLocked && (
           <p style={{ color: 'var(--color-text-muted)', padding: '16px' }}>
-            🔒 This tab unlocks at {tab.unlockCondition!.percentage}% {
-              tab.unlockCondition!.type === "overall"
-                ? "overall completion"
-                : `completion of "${allTabs.find(t => t.id === tab.unlockCondition!.tabId)?.title ?? 'another tab'}"`
-            }
+            🔒 This tab unlocks when {getUnlockMessage(tab.unlockCondition!)}
           </p>
         )}
       <div style={{ opacity: isTabLocked ? 0.5 : 1, position: 'relative' }}>
@@ -87,16 +96,7 @@ export function TabView({ allTabs, tab, onFieldChange, onColumnValueChange, isEd
                   backgroundColor: 'rgba(0,0,0,0.05)'
                 }}>
                   <p style={{ fontWeight: 600 }}>
-                    {isLockedByTab
-                      ? tab.unlockCondition!.type === "overall"
-                        ? `🔒 Unlocks at ${tab.unlockCondition!.percentage}% overall completion`
-                        : `🔒 Unlocks at ${tab.unlockCondition!.percentage}% completion of "${allTabs.find(t => t.id === tab.unlockCondition!.tabId)?.title ?? 'another tab'}"`
-                      : (section.unlockCondition! as any).type === "field"
-                      ? `🔒 Unlocks when a specific field is complete`
-                      : section.unlockCondition!.type === "tab"
-                      ? `🔒 Unlocks at ${section.unlockCondition!.percentage}% completion of "${allTabs.find(t => t.id === (section.unlockCondition as any).tabId)?.title ?? 'another tab'}"`
-                      : `🔒 Unlocks at ${section.unlockCondition!.percentage}% overall completion`
-                    }
+                    🔒 Unlocks when {isLockedByTab ? getUnlockMessage(tab.unlockCondition!) : getUnlockMessage(section.unlockCondition!)}
                   </p>
                 </div>
               )}
@@ -109,6 +109,7 @@ export function TabView({ allTabs, tab, onFieldChange, onColumnValueChange, isEd
                   onEditTarget={onEditTarget}
                   tabId={tab.id}
                   onAddField={onAddField}
+                  disabled={disabled}
                 />
               </div>
             </div>

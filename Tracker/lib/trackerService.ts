@@ -1,6 +1,26 @@
 import { supabase } from './supabase'
 import { Tracker, TrackerTab, TrackerSection, TrackerField } from '@/Types/field'
 
+
+function resetFieldProgress(field: TrackerField): TrackerField {
+  if (field.type === 'checkbox') return { ...field, checked: false }
+  if (field.type === 'number') return { ...field, value: 0 }
+  return { ...field, selected: -1 }
+}
+
+export function resetTrackerProgress(tracker: Tracker): Tracker {
+  return {
+    ...tracker,
+    tabs: tracker.tabs.map(tab => ({
+      ...tab,
+      sections: tab.sections.map(section => ({
+        ...section,
+        fields: section.fields.map(resetFieldProgress)
+      }))
+    }))
+  }
+}
+
 export async function saveTracker(tracker: Tracker): Promise<void> {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Not authenticated')
@@ -9,6 +29,8 @@ export async function saveTracker(tracker: Tracker): Promise<void> {
     .from('trackers')
     .upsert({ id: tracker.id, owner_id: user.id, title: tracker.title, is_public: tracker.is_public })
   if (trackerError) throw trackerError
+
+
 
   // Delete removed tabs
   const { data: existingTabs } = await supabase
@@ -261,12 +283,12 @@ export async function loadTracker(trackerId: string): Promise<Tracker> {
     .in('section_id', sectionsData.map(section => section.id))
     .order('order')
   if (columnsError) throw columnsError
-
+  
   const { data: columnValuesData, error: columnValuesError } = await supabase
     .from('field_column_values')
     .select('*')
     .in('field_id', fieldsData.map(field => field.id))
-    .eq('user_id', user.id)
+    .eq('user_id', trackerData.owner_id)
   if (columnValuesError) throw columnValuesError
 
   const tabs: TrackerTab[] = tabsData.map(tab => ({
@@ -333,6 +355,7 @@ export async function loadTracker(trackerId: string): Promise<Tracker> {
     id: trackerData.id,
     title: trackerData.title,
     is_public: trackerData.is_public,
+    owner_id: trackerData.owner_id,
     tabs
   }
 }
@@ -378,6 +401,7 @@ export async function createTracker(title: string): Promise<Tracker> {
     id: crypto.randomUUID(),
     title,
     is_public: false,
+    owner_id: user.id,
     tabs: []
   }
   const { error } = await supabase
@@ -398,25 +422,32 @@ export async function copyTracker(trackerId: string): Promise<Tracker> {
     id: crypto.randomUUID(),
     title: `${original.title} (copy)`,
     is_public: false,
+    owner_id: user.id,
     tabs: original.tabs.map(tab => ({
       ...tab,
       id: crypto.randomUUID(),
-      sections: tab.sections.map(section => ({
-        ...section,
-        id: crypto.randomUUID(),
-        columns: section.columns.map(col => ({
-          ...col,
-          id: crypto.randomUUID()
-        })),
-        fields: section.fields.map(field => ({
-          ...field,
+      sections: tab.sections.map(section => {
+        const columnIdMap = new Map(section.columns.map(col => [col.id, crypto.randomUUID()]))
+        return {
+          ...section,
           id: crypto.randomUUID(),
-          columnValues: {}
-        }))
-      }))
+          columns: section.columns.map(col => ({
+            ...col,
+            id: columnIdMap.get(col.id)!
+          })),
+          fields: section.fields.map(field => ({
+            ...resetFieldProgress(field),
+            id: crypto.randomUUID(),
+            columnValues: Object.fromEntries(
+              Object.entries(field.columnValues).map(([colId, value]) => [columnIdMap.get(colId) ?? colId, value])
+            )
+          }))
+        }
+      })
     }))
   }
 
   await saveTracker(copied)
+  await saveColumnValues(copied)
   return copied
 }
