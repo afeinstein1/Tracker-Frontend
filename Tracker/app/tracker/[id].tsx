@@ -1,12 +1,15 @@
 import { Stack, useLocalSearchParams, useRouter } from "expo-router"
 import { useEffect, useState } from "react"
-import { loadTracker, saveColumnValues, saveTracker, saveTrackerValues } from "@/lib/trackerService"
+import { loadTracker, saveColumnValues, saveTracker, saveTrackerValues, copyTracker, resetTrackerProgress } from "@/lib/trackerService"
+import { supabase } from "@/lib/supabase"
 import { TrackerView } from "@/renderer/TrackerRenderer"
 import { Tracker } from "@/Types/field"
 
 export default function TrackerPage() {
   const { id } = useLocalSearchParams<{ id: string }>()
+  const router = useRouter()
   const [tracker, setTracker] = useState<Tracker | null>(null)
+  const [isOwner, setIsOwner] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -17,8 +20,13 @@ export default function TrackerPage() {
   async function fetchTracker() {
     try {
       setLoading(true)
-      const data = await loadTracker(id)
-      setTracker(data)
+      const [data, { data: { user } }] = await Promise.all([
+        loadTracker(id),
+        supabase.auth.getUser()
+      ])
+      const owner = data.owner_id === user?.id
+      setTracker(owner ? data : resetTrackerProgress(data))
+      setIsOwner(owner)
     } catch (e: any) {
       setError(e.message)
     } finally {
@@ -36,17 +44,30 @@ export default function TrackerPage() {
     }
   }
 
+  async function handleCopy() {
+    if (!tracker) return
+    try {
+      const copied = await copyTracker(tracker.id)
+      router.replace(`/tracker/${copied.id}`)
+    } catch (e: any) {
+      setError(e.message)
+    }
+  }
+
   if (loading) return <p>Loading...</p>
   if (error) return <p>Error: {error}</p>
   if (!tracker) return <p>Tracker not found</p>
 
-  const router = useRouter()
-
   return (
     <div>
       <Stack.Screen options={{ headerShown: false }} />
-      <button onClick={() => router.push('/')} style={{ margin: '16px' }}>← My Trackers</button>
-      <TrackerView tracker={tracker} onSave={handleSave} />
+      <button onClick={() => router.canGoBack() ? router.back() : router.push('/')} style={{ margin: '16px' }}>← Back</button>
+      <TrackerView
+        tracker={tracker}
+        onSave={isOwner ? handleSave : undefined}
+        readOnly={!isOwner}
+        onCopy={isOwner ? undefined : handleCopy}
+      />
     </div>
   )
 }

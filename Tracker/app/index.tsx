@@ -68,6 +68,7 @@ async function handleDelete() {
         <div style={{ display: 'flex', gap: '8px' }}>
           <button onClick={handleCreate}>+ New Tracker</button>
           <button onClick={() => router.push('/search')}>Find Trackers</button>
+          <button onClick={() => router.push('/settings')}>Settings</button>
           <button onClick={handleLogout}>Log Out</button>
         </div>
       </div>

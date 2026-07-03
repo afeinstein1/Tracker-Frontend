@@ -3,6 +3,8 @@ import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase" 
 import '@/css/global.css'
 
+const PUBLIC_SEGMENTS = ['login', 'signup', 'landing', 'reset-password']
+
 export default function RootLayout() {
   const [session, setSession] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -15,8 +17,11 @@ export default function RootLayout() {
       setLoading(false)
     })
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session)
+      if (event === 'PASSWORD_RECOVERY') {
+        router.replace('/reset-password')
+      }
     })
 
     return () => listener.subscription.unsubscribe()
@@ -25,9 +30,10 @@ export default function RootLayout() {
   useEffect(() => {
     if (loading) return
 
+    const inPublicGroup = PUBLIC_SEGMENTS.includes(segments[0] as string)
     const inAuthGroup = segments[0] === 'login' || segments[0] === 'signup' || segments[0] === 'landing'
 
-    if (!session && !inAuthGroup) {
+    if (!session && !inPublicGroup) {
       router.replace('/landing')
     } else if (session && inAuthGroup) {
       router.replace("/")

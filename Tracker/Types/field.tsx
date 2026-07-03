@@ -24,9 +24,10 @@ export type TrackerField = CheckboxField | NumberField | DropdownField
 
 
 export interface TabUnlockCondition {
-  type: "overall" | "tab"
-  tabId?: string  
-  percentage: number
+  type: "overall" | "tab" | "field"
+  tabId?: string
+  fieldId?: string
+  percentage?: number
 }
 
 export interface SectionUnlockCondition {
@@ -35,6 +36,7 @@ export interface SectionUnlockCondition {
   fieldId?: string
   percentage?: number  
 }
+
 export interface SectionColumn {
   id: string
   label: string
@@ -60,8 +62,10 @@ export interface Tracker {
   id: string
   title: string
   is_public: boolean
+  owner_id: string
   tabs: TrackerTab[]
 }
+
 export type EditTarget =
   | { type: "tracker"; item: Tracker }
   | { type: "tab"; item: TrackerTab }
