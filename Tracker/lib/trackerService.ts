@@ -1,6 +1,17 @@
 import { supabase } from './supabase'
-import { Tracker, TrackerTab, TrackerSection, TrackerField } from '@/Types/field'
+import { Tracker, TrackerTab, TrackerSection, TrackerField, TabUnlockCondition, SectionUnlockCondition } from '@/Types/field'
 
+
+function remapUnlockCondition<T extends { type: string; tabId?: string; fieldId?: string }>(
+  condition: T | undefined,
+  tabIdMap: Map<string, string>,
+  fieldIdMap: Map<string, string>
+): T | undefined {
+  if (!condition) return undefined
+  if (condition.type === 'tab') return { ...condition, tabId: tabIdMap.get(condition.tabId ?? '') ?? condition.tabId }
+  if (condition.type === 'field') return { ...condition, fieldId: fieldIdMap.get(condition.fieldId ?? '') ?? condition.fieldId }
+  return condition
+}
 
 function resetFieldProgress(field: TrackerField): TrackerField {
   if (field.type === 'checkbox') return { ...field, checked: false }
@@ -95,7 +106,7 @@ export async function saveTracker(tracker: Tracker): Promise<void> {
       for (const [columnIndex, column] of section.columns.entries()) {
         const { error: columnError } = await supabase
           .from('section_columns')
-          .upsert({ id: column.id, section_id: section.id, label: column.label, type: column.type, order: columnIndex })
+          .upsert({ id: column.id, section_id: section.id, label: column.label, type: column.type, order: columnIndex, options: column.type === 'dropdown' ? (column.options ?? []) : null })
         if (columnError) throw columnError
       }
 
@@ -181,7 +192,9 @@ export async function deleteImage(url: string): Promise<void> {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Not authenticated')
 
-  const path = url.split('/tracker-images/')[1]
+  const path = extractStoragePath(url)
+  if (!path) return
+
   const { error } = await supabase.storage
     .from('tracker-images')
     .remove([path])
@@ -305,7 +318,8 @@ export async function loadTracker(trackerId: string): Promise<Tracker> {
           .map((col: any) => ({
             id: col.id,
             label: col.label,
-            type: col.type as "text" | "image"
+            type: col.type as "text" | "image" | "dropdown",
+            options: col.options ?? undefined
           })),
         fields: fieldsData
           .filter(field => field.section_id === section.id)
@@ -411,11 +425,81 @@ export async function createTracker(title: string): Promise<Tracker> {
 
   return newTracker
 }
+function extractStoragePath(url: string): string | null {
+  const marker = '/tracker-images/'
+  const idx = url.indexOf(marker)
+  if (idx === -1) return null
+  return url.slice(idx + marker.length).split('?')[0]
+}
 
+async function copyFieldImage(url: string, newFieldId: string, ownerId: string): Promise<string> {
+  const fromPath = extractStoragePath(url)
+  if (!fromPath) return url
+
+  const ext = fromPath.split('.').pop()
+  const toPath = `${ownerId}/${newFieldId}-${crypto.randomUUID()}.${ext}`
+
+  const { error: copyError } = await supabase.storage.from('tracker-images').copy(fromPath, toPath)
+  if (copyError) return url
+
+  const { data, error: urlError } = await supabase.storage
+    .from('tracker-images')
+    .createSignedUrl(toPath, 60 * 60 * 24 * 365)
+  if (urlError || !data) return url
+
+  return data.signedUrl
+}
 export async function copyTracker(trackerId: string): Promise<Tracker> {
   const original = await loadTracker(trackerId)
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Not authenticated')
+
+  const tabIdMap = new Map(original.tabs.map(tab => [tab.id, crypto.randomUUID()]))
+  const fieldIdMap = new Map(
+    original.tabs.flatMap(tab => tab.sections.flatMap(section => section.fields))
+      .map(field => [field.id, crypto.randomUUID()])
+  )
+
+  const tabs: TrackerTab[] = await Promise.all(original.tabs.map(async tab => {
+    const sections: TrackerSection[] = await Promise.all(tab.sections.map(async section => {
+      const columnIdMap = new Map(section.columns.map(col => [col.id, crypto.randomUUID()]))
+      const columns = section.columns.map(col => ({ ...col, id: columnIdMap.get(col.id)! }))
+
+      const fields: TrackerField[] = await Promise.all(section.fields.map(async field => {
+        const newFieldId = fieldIdMap.get(field.id)!
+        const columnValues: Record<string, string> = {}
+        for (const [colId, value] of Object.entries(field.columnValues)) {
+          const newColId = columnIdMap.get(colId) ?? colId
+          const col = section.columns.find(c => c.id === colId)
+          if (col?.type === 'image' && value) {
+            columnValues[newColId] = await copyFieldImage(value, newFieldId, user.id)
+          } else {
+            columnValues[newColId] = value
+          }
+        }
+        return {
+          ...resetFieldProgress(field),
+          id: newFieldId,
+          columnValues
+        }
+      }))
+
+      return {
+        ...section,
+        id: crypto.randomUUID(),
+        columns,
+        fields,
+        unlockCondition: remapUnlockCondition(section.unlockCondition, tabIdMap, fieldIdMap)
+      }
+    }))
+
+    return {
+      ...tab,
+      id: tabIdMap.get(tab.id)!,
+      sections,
+      unlockCondition: remapUnlockCondition(tab.unlockCondition, tabIdMap, fieldIdMap)
+    }
+  }))
 
   const copied: Tracker = {
     ...original,
@@ -423,28 +507,7 @@ export async function copyTracker(trackerId: string): Promise<Tracker> {
     title: `${original.title} (copy)`,
     is_public: false,
     owner_id: user.id,
-    tabs: original.tabs.map(tab => ({
-      ...tab,
-      id: crypto.randomUUID(),
-      sections: tab.sections.map(section => {
-        const columnIdMap = new Map(section.columns.map(col => [col.id, crypto.randomUUID()]))
-        return {
-          ...section,
-          id: crypto.randomUUID(),
-          columns: section.columns.map(col => ({
-            ...col,
-            id: columnIdMap.get(col.id)!
-          })),
-          fields: section.fields.map(field => ({
-            ...resetFieldProgress(field),
-            id: crypto.randomUUID(),
-            columnValues: Object.fromEntries(
-              Object.entries(field.columnValues).map(([colId, value]) => [columnIdMap.get(colId) ?? colId, value])
-            )
-          }))
-        }
-      })
-    }))
+    tabs
   }
 
   await saveTracker(copied)

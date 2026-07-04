@@ -41,8 +41,8 @@ export interface SectionColumn {
   id: string
   label: string
   type: "text" | "image" | "dropdown"
+  options?: string[]
 }
-
 export interface TrackerSection {
   id: string
   title: string

@@ -57,26 +57,37 @@ export function TrackerSectionView({ section, onFieldChange, onColumnValueChange
                 readOnly={!isEditMode || disabled}
                 style={{ width: '100%', height: '80%', padding: '4px', resize: 'none', verticalAlign: 'top' }}
               />
-            ) : (
-              <div>{col.type === 'image' ? (
+            ) : col.type === 'image' ? (
+              <div>
                 <ImageField
                   fieldId={field.id}
                   value={field.columnValues[col.id] ?? ''}
                   onChange={url => onColumnValueChange(field.id, col.id, url)}
                   isEditMode={isEditMode && !disabled}
                 />
-              ) : (
-                <input
-                  value={field.columnValues[col.id] ?? ''}
-                  onChange={e => onColumnValueChange(field.id, col.id, e.target.value)}
-                  readOnly={!isEditMode || disabled}
-                  style={{ width: '100%', padding: '4px' }}
-                />
-              )}</div>
+              </div>
+            ) : col.type === 'dropdown' ? (
+              <select
+                value={field.columnValues[col.id] ?? ''}
+                onChange={e => onColumnValueChange(field.id, col.id, e.target.value)}
+                disabled={!isEditMode || disabled}
+                style={{ width: '100%', padding: '4px' }}
+              >
+                <option value="">—</option>
+                {(col.options ?? []).map((option, i) => (
+                  <option key={i} value={option}>{option}</option>
+                ))}
+              </select>
+            ) : (
+              <input
+                value={field.columnValues[col.id] ?? ''}
+                onChange={e => onColumnValueChange(field.id, col.id, e.target.value)}
+                readOnly={!isEditMode || disabled}
+                style={{ width: '100%', padding: '4px' }}
+              />
             )}
           </div>
         ))}
-
         </div>
       ))}
 

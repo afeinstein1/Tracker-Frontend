@@ -63,6 +63,7 @@ export default function TrackerPage() {
       <Stack.Screen options={{ headerShown: false }} />
       <button onClick={() => router.canGoBack() ? router.back() : router.push('/')} style={{ margin: '16px' }}>← Back</button>
       <TrackerView
+        key={tracker.id}
         tracker={tracker}
         onSave={isOwner ? handleSave : undefined}
         readOnly={!isOwner}
