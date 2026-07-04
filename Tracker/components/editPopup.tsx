@@ -201,27 +201,52 @@ export function EditPopup({ tracker, target, onSave, onDelete, onClose }: Props)
               <div>
                 <p style={{ margin: '0 0 8px 0', fontWeight: 600 }}>Extra Columns</p>
                 {columns.map((col, index) => (
-                  <div key={col.id} style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
-                    <input
-                      value={col.label}
-                      onChange={e => setColumns(prev => prev.map((c, i) =>
-                        i === index ? { ...c, label: e.target.value } : c
-                      ))}
-                      placeholder="Column name"
-                      style={{ flex: 1, padding: '4px' }}
-                    />
-                    <select
-                      value={col.type}
-                      onChange={e => setColumns(prev => prev.map((c, i) =>
-                        i === index ? { ...c, type: e.target.value as "text" | "image" | "dropdown" } : c
-                      ))}
-                      style={{ padding: '4px' }}
-                    >
-                      <option value="text">Text</option>
-                      <option value="image">Image</option>
-                    </select>
-                    <button onClick={() => setColumns(prev => prev.filter((_, i) => i !== index))}
-                      style={{ color: 'red' }}>✕</button>
+                  <div key={col.id} style={{ marginBottom: '12px', paddingBottom: '12px', borderBottom: '1px solid var(--color-border)' }}>
+                    <div style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
+                      <input
+                        value={col.label}
+                        onChange={e => setColumns(prev => prev.map((c, i) =>
+                          i === index ? { ...c, label: e.target.value } : c
+                        ))}
+                        placeholder="Column name"
+                        style={{ flex: 1, padding: '4px' }}
+                      />
+                      <select
+                        value={col.type}
+                        onChange={e => setColumns(prev => prev.map((c, i) =>
+                          i === index ? { ...c, type: e.target.value as "text" | "image" | "dropdown", options: e.target.value === 'dropdown' ? (c.options ?? ['Option 1', 'Option 2']) : c.options } : c
+                        ))}
+                        style={{ padding: '4px' }}
+                      >
+                        <option value="text">Text</option>
+                        <option value="image">Image</option>
+                        <option value="dropdown">Dropdown</option>
+                      </select>
+                      <button onClick={() => setColumns(prev => prev.filter((_, i) => i !== index))}
+                        style={{ color: 'red' }}>✕</button>
+                    </div>
+                    {col.type === 'dropdown' && (
+                      <div style={{ paddingLeft: '8px' }}>
+                        {(col.options ?? []).map((option, optIndex) => (
+                          <div key={optIndex} style={{ display: 'flex', gap: '8px', marginBottom: '4px' }}>
+                            <input
+                              value={option}
+                              onChange={e => setColumns(prev => prev.map((c, i) =>
+                                i !== index ? c : { ...c, options: (c.options ?? []).map((o, oi) => oi === optIndex ? e.target.value : o) }
+                              ))}
+                              placeholder={`Option ${optIndex + 1}`}
+                              style={{ flex: 1, padding: '4px' }}
+                            />
+                            <button onClick={() => setColumns(prev => prev.map((c, i) =>
+                              i !== index ? c : { ...c, options: (c.options ?? []).filter((_, oi) => oi !== optIndex) }
+                            ))} style={{ color: 'red' }}>✕</button>
+                          </div>
+                        ))}
+                        <button onClick={() => setColumns(prev => prev.map((c, i) =>
+                          i !== index ? c : { ...c, options: [...(c.options ?? []), ''] }
+                        ))}>+ Add Option</button>
+                      </div>
+                    )}
                   </div>
                 ))}
                 <button onClick={() => setColumns(prev => [...prev, {

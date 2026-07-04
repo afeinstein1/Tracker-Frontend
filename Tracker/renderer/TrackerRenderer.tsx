@@ -9,9 +9,10 @@ type Props = {
   onSave?: (tracker: Tracker) => void
   readOnly?: boolean
   onCopy?: () => void
+  autoOpenEdit?: boolean
 }
 
-export function TrackerView({ tracker: initialTracker, onSave, readOnly = false, onCopy }: Props) {
+export function TrackerView({ tracker: initialTracker, onSave, readOnly = false, onCopy, autoOpenEdit = false }: Props) {
   const [tracker, setTracker] = useState(initialTracker)
   const [activeTab, setActiveTab] = useState(0)
   const [editTarget, setEditTarget] = useState<EditTarget | null>(null)
@@ -40,6 +41,13 @@ export function TrackerView({ tracker: initialTracker, onSave, readOnly = false,
     return () => clearTimeout(timer)
   }, [tracker])
 
+  useEffect(() => {
+    if (autoOpenEdit) {
+      setIsEditMode(true)
+      setEditTarget({ type: "tracker", item: tracker })
+    }
+  }, [])
+
 
   function handleAddTab() {
     const newTab: TrackerTab = {
@@ -51,6 +59,8 @@ export function TrackerView({ tracker: initialTracker, onSave, readOnly = false,
       ...prev,
       tabs: [...prev.tabs, newTab]
     }))
+    setActiveTab(tracker.tabs.length)
+    setEditTarget({ type: "tab", item: newTab })
   }
   function handleColumnValueChange(tabId: string, sectionId: string, fieldId: string, columnId: string, value: string) {
     setTracker(prev => ({
@@ -91,6 +101,7 @@ export function TrackerView({ tracker: initialTracker, onSave, readOnly = false,
         }
       )
     }))
+    setEditTarget({ type: "section", item: newSection, tabId })
   }
 
   function handleAddField(sectionId: string) {

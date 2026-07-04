@@ -1,4 +1,5 @@
 import { DropdownField } from "@/Types/field"
+import { Label } from '@/components/form'
 
 type Props = {
   field: DropdownField
@@ -7,15 +8,18 @@ type Props = {
 }
 export function DropdownFieldView({ field, onChange, disabled = false }: Props) {
   return (
-    <select
-      value={field.selected}
-      onChange={e => onChange(Number(e.target.value))}
-      disabled={disabled}
-      style={{ width: '150px', padding: '4px' }}
-    >
-      {field.options.map((option, index) => (   
-        <option key={index} value={index}>{option}</option>
-      ))}
-    </select>
+    <div>
+      <Label style={{ display: 'block', marginBottom: '4px' }}>{field.label}</Label>
+      <select
+        value={field.selected}
+        onChange={e => onChange(Number(e.target.value))}
+        disabled={disabled}
+        style={{ width: '150px', padding: '4px' }}
+      >
+        {field.options.map((option, index) => (   
+          <option key={index} value={index}>{option}</option>
+        ))}
+      </select>
+    </div>
   )
 }

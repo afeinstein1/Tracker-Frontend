@@ -27,10 +27,21 @@ export function CheckboxFieldView({ field, onChange, disabled = false }: Props) 
       <div style={{
         width: '18px',
         height: '18px',
-        border: '2px solid black',
-        backgroundColor: checked ? 'black' : 'white',
-        opacity: disabled ? 0.5 : 1
-      }} />
+        borderRadius: 'var(--border-radius-sm)',
+        border: checked ? '2px solid var(--color-accent)' : '2px solid var(--color-border)',
+        backgroundColor: checked ? 'var(--color-accent)' : 'var(--color-surface)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        opacity: disabled ? 0.5 : 1,
+        transition: 'background-color 0.15s, border-color 0.15s'
+      }}>
+        {checked && (
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <path d="M2 6L4.5 8.5L10 3" stroke="var(--color-accent-text)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        )}
+      </div>
       {field.label}
     </Checkbox>
   )

@@ -7,27 +7,30 @@ export default function Settings() {
 
   const [emailPassword, setEmailPassword] = useState('')
   const [newEmail, setNewEmail] = useState('')
+  const [emailError, setEmailError] = useState<string | null>(null)
+  const [emailMessage, setEmailMessage] = useState<string | null>(null)
 
   const [pwCurrentPassword, setPwCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [passwordError, setPasswordError] = useState<string | null>(null)
+  const [passwordMessage, setPasswordMessage] = useState<string | null>(null)
 
   const [deletePassword, setDeletePassword] = useState('')
   const [confirmingDelete, setConfirmingDelete] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [message, setMessage] = useState<string | null>(null)
 
   async function handleChangeEmail() {
-    setLoading(true); setError(null); setMessage(null)
+    setLoading(true); setEmailError(null); setEmailMessage(null)
     try {
       await changeEmail(emailPassword, newEmail)
-      setMessage('Check your new email address for a confirmation link.')
+      setEmailMessage('Check your new email address for a confirmation link.')
       setEmailPassword('')
       setNewEmail('')
     } catch (e: any) {
-      setError(e.message)
+      setEmailError(e.message)
     } finally {
       setLoading(false)
     }
@@ -35,30 +38,30 @@ export default function Settings() {
 
   async function handleChangePassword() {
     if (newPassword !== confirmPassword) {
-      setError('New passwords do not match')
+      setPasswordError('New passwords do not match')
       return
     }
-    setLoading(true); setError(null); setMessage(null)
+    setLoading(true); setPasswordError(null); setPasswordMessage(null)
     try {
       await changePassword(pwCurrentPassword, newPassword)
-      setMessage('Password updated.')
+      setPasswordMessage('Password updated.')
       setPwCurrentPassword('')
       setNewPassword('')
       setConfirmPassword('')
     } catch (e: any) {
-      setError(e.message)
+      setPasswordError(e.message)
     } finally {
       setLoading(false)
     }
   }
 
   async function handleDeleteAccount() {
-    setLoading(true); setError(null)
+    setLoading(true); setDeleteError(null)
     try {
       await deleteAccount(deletePassword)
       router.replace('/landing')
     } catch (e: any) {
-      setError(e.message)
+      setDeleteError(e.message)
       setLoading(false)
     }
   }
@@ -70,11 +73,10 @@ export default function Settings() {
         <button onClick={() => router.push('/')} style={{ marginLeft: 'auto' }}>← My Trackers</button>
       </div>
 
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      {message && <p style={{ color: 'green' }}>{message}</p>}
-
       <div style={{ border: '2px solid #ccc', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
         <h2 style={{ marginTop: 0 }}>Change Email</h2>
+        {emailError && <p style={{ color: 'red' }}>{emailError}</p>}
+        {emailMessage && <p style={{ color: 'green' }}>{emailMessage}</p>}
         <label>
           New Email
           <input type="email" value={newEmail} onChange={e => setNewEmail(e.target.value)} style={{ display: 'block', width: '100%', marginTop: '4px', marginBottom: '12px', padding: '8px' }} />
@@ -88,6 +90,8 @@ export default function Settings() {
 
       <div style={{ border: '2px solid #ccc', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
         <h2 style={{ marginTop: 0 }}>Change Password</h2>
+        {passwordError && <p style={{ color: 'red' }}>{passwordError}</p>}
+        {passwordMessage && <p style={{ color: 'green' }}>{passwordMessage}</p>}
         <label>
           Current Password
           <input type="password" value={pwCurrentPassword} onChange={e => setPwCurrentPassword(e.target.value)} style={{ display: 'block', width: '100%', marginTop: '4px', marginBottom: '12px', padding: '8px' }} />
@@ -105,6 +109,7 @@ export default function Settings() {
 
       <div style={{ border: '2px solid var(--color-danger)', borderRadius: '12px', padding: '16px' }}>
         <h2 style={{ marginTop: 0, color: 'red' }}>Delete Account</h2>
+        {deleteError && <p style={{ color: 'red' }}>{deleteError}</p>}
         {!confirmingDelete ? (
           <button onClick={() => setConfirmingDelete(true)} style={{ color: 'red' }}>Delete My Account</button>
         ) : (
