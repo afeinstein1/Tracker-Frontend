@@ -17,13 +17,15 @@ export function ProgressNumber({ label, max, onChange, value: initialValue, disa
       maxValue={max}
       isDisabled={disabled}
     >
-      <Label>{label}</Label>
-      <Group>
-        <Button slot="decrement">-</Button>
-        <Input />
-        <Button slot="increment">+</Button>
-      </Group>
-      <span>/ {max}</span>
+      <Label style={{ display: 'block', marginBottom: '4px' }}>{label}</Label>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <Group style={{ display: 'flex', alignItems: 'center' }}>
+          <Button slot="decrement">-</Button>
+          <Input style={{ width: '50px', textAlign: 'center' }} />
+          <Button slot="increment">+</Button>
+        </Group>
+        <span style={{ color: 'var(--color-text-muted)' }}>/ {max}</span>
+      </div>
     </NumberField>
   )
 }

@@ -35,7 +35,7 @@ export default function Index() {
   async function handleCreate() {
     try {
       const tracker = await createTracker("New Tracker")
-      router.push(`/tracker/${tracker.id}`)
+      router.push(`/tracker/${tracker.id}?created=1`)
     } catch (e: any) {
       setError(e.message)
     }

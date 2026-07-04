@@ -20,8 +20,8 @@ export function Meter({ label, value, maxValue, ...props }: MeterProps) {
               className="fill"
               style={{
                 width: percentage + '%',
-                '--fill-color': percentage < 25 ? 'var(--red)' : percentage < 50 ? 'var(--orange)' : percentage < 75 ? 'var(--yellow)' : 'var(--green)'
-              } as any} />
+                backgroundSize: `${percentage > 0 ? 10000 / percentage : 100}% 100%`
+              }} />
           </div>
         </>
       )}

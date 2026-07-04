@@ -6,7 +6,7 @@ import { TrackerView } from "@/renderer/TrackerRenderer"
 import { Tracker } from "@/Types/field"
 
 export default function TrackerPage() {
-  const { id } = useLocalSearchParams<{ id: string }>()
+  const { id, created } = useLocalSearchParams<{ id: string; created?: string }>()
   const router = useRouter()
   const [tracker, setTracker] = useState<Tracker | null>(null)
   const [isOwner, setIsOwner] = useState(false)
@@ -68,6 +68,7 @@ export default function TrackerPage() {
         onSave={isOwner ? handleSave : undefined}
         readOnly={!isOwner}
         onCopy={isOwner ? undefined : handleCopy}
+        autoOpenEdit={created === '1'}
       />
     </div>
   )
