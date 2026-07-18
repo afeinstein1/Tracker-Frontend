@@ -49,6 +49,12 @@ export default function SignUp() {
         <button onClick={handleSignUp} disabled={loading}>
           {loading ? 'Signing up...' : 'Sign Up'}
         </button>
+        <p style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>
+          By signing up, you agree to our{' '}
+          <a onClick={() => router.push('/terms')} style={{ cursor: 'pointer', color: 'var(--color-accent)' }}>Terms of Service</a>
+          {' '}and{' '}
+          <a onClick={() => router.push('/privacy')} style={{ cursor: 'pointer', color: 'var(--color-accent)' }}>Privacy Policy</a>.
+        </p>
         <OAuthButtons />
         <p>Already have an account? <a onClick={() => router.push('/login')} style={{ cursor: 'pointer', color: 'blue' }}>Log in</a></p>
       </div>

@@ -1,4 +1,5 @@
 import { useRouter } from "expo-router"
+import { Button } from "react-native"
 
 export default function Landing() {
   const router = useRouter()
@@ -12,6 +13,11 @@ export default function Landing() {
       <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
         <button onClick={() => router.push('/login')}>Log In</button>
         <button onClick={() => router.push('/signup')}>Sign Up</button>
+      </div>
+
+      <div style={{ marginTop: '48px', display: 'flex', gap: '16px', justifyContent: 'center', fontSize: '14px' }}>
+        <a onClick={() => router.push('/privacy')} style={{ cursor: 'pointer', color: 'var(--color-accent)' }}>Privacy Policy</a>
+        <a onClick={() => router.push('/terms')} style={{ cursor: 'pointer', color: 'var(--color-accent)' }}>Terms of Service</a>
       </div>
     </div>
   )

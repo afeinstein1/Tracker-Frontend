@@ -1,11 +1,13 @@
+import "@/lib/sentry"
+import * as Sentry from "@sentry/react-native"
 import { Stack, useRouter, useSegments } from "expo-router"
 import { useEffect, useState } from "react"
-import { supabase } from "@/lib/supabase" 
+import { supabase } from "@/lib/supabase"
 import '@/css/global.css'
 
-const PUBLIC_SEGMENTS = ['login', 'signup', 'landing', 'reset-password']
+const PUBLIC_SEGMENTS = ['login', 'signup', 'landing', 'reset-password', 'privacy', 'terms']
 
-export default function RootLayout() {
+export default Sentry.wrap(function RootLayout() {
   const [session, setSession] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const router = useRouter()
@@ -44,7 +46,9 @@ export default function RootLayout() {
 
 return (
     <div style={{ minHeight: '100vh', backgroundColor: 'var(--color-background)', color: 'var(--color-text)' }}>
-      <Stack screenOptions={{ headerShown: false }} />
+      <Sentry.ErrorBoundary fallback={<p style={{ padding: '24px' }}>Something went wrong. Please refresh the page.</p>}>
+        <Stack screenOptions={{ headerShown: false }} />
+      </Sentry.ErrorBoundary>
     </div>
   )
-}
+});
