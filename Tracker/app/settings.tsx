@@ -126,6 +126,11 @@ export default function Settings() {
           </>
         )}
       </div>
+
+      <div style={{ marginTop: '32px', display: 'flex', gap: '16px', justifyContent: 'center', fontSize: '14px' }}>
+        <a onClick={() => router.push('/privacy')} style={{ cursor: 'pointer', color: 'var(--color-accent)' }}>Privacy Policy</a>
+        <a onClick={() => router.push('/terms')} style={{ cursor: 'pointer', color: 'var(--color-accent)' }}>Terms of Service</a>
+      </div>
     </div>
   )
 }
