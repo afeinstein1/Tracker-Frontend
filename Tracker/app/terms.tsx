@@ -57,7 +57,7 @@ export default function Terms() {
       <p>We may update these terms occasionally; the date at the top will reflect the latest revision.</p>
 
       <h2>11. Contact</h2>
-      <p>Questions about these terms? Reach out at <strong>[your contact email here]</strong>.</p>
+      <p>Questions about these terms? Reach out at <strong>support@trackercreate.com</strong>.</p>
     </div>
   )
 }
