@@ -57,7 +57,7 @@ export default function Privacy() {
       <p>If this policy changes meaningfully, we'll update the date at the top of this page.</p>
 
       <h2>Contact</h2>
-      <p>Questions about this policy? Reach out at <strong>[your contact email here]</strong>.</p>
+      <p>Questions about this policy? Reach out at <strong>support@trackercreate.com</strong>.</p>
     </div>
   )
 }
