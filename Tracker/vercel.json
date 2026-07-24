@@ -1,6 +1,5 @@
 {
-  "cleanUrls": true,
   "rewrites": [
-    { "source": "/tracker/:id", "destination": "/tracker/%5Bid%5D.html" }
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
