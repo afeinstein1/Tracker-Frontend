@@ -6,6 +6,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["--prefix", "Tracker", "run", "web", "--", "--port", "8082"],
       "port": 8082
+    },
+    {
+      "name": "dist-static",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "-s", "Tracker/dist", "-l", "8083"],
+      "port": 8083
     }
   ]
 }
