@@ -30,6 +30,7 @@ export default function AdBanner() {
         zIndex: 100,
         display: 'flex',
         justifyContent: 'center',
+        alignItems: 'center',
         overflow: 'hidden',
         // Belt-and-suspenders: the explicit height above is what tells Google's
         // responsive algorithm what size to serve in the first place, so this
@@ -41,13 +42,18 @@ export default function AdBanner() {
         pointerEvents: 'none',
       }}
     >
+      {/*
+        Deliberately NOT using data-ad-format="auto" / data-full-width-responsive.
+        Those let Google's script pick any shape it wants (including tall
+        rectangles) and it resizes the <ins> after load, overriding any CSS
+        height we give it. A fixed-size request like this can only ever render
+        at exactly 320x50 or not render at all — it cannot grow past that.
+      */}
       <ins
         className="adsbygoogle"
-        style={{ display: 'block', width: '100%', maxWidth: '728px', height: 'var(--ad-banner-height)', pointerEvents: 'auto' }}
+        style={{ display: 'inline-block', width: '320px', height: '50px', pointerEvents: 'auto' }}
         data-ad-client={ADSENSE_CLIENT_ID}
         data-ad-slot={ADSENSE_FOOTER_SLOT_ID}
-        data-ad-format="auto"
-        data-full-width-responsive="true"
       />
     </div>
   )

@@ -12,13 +12,7 @@
   --spacing-sm: 8px;
   --spacing-md: 16px;
   --spacing-lg: 24px;
-  --ad-banner-height: 50px;
-}
-
-@media (min-width: 600px) {
-  :root {
-    --ad-banner-height: 90px;
-  }
+  --ad-banner-height: 58px;
 }
 
 @media (prefers-color-scheme: dark) {
