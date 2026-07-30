@@ -3,6 +3,7 @@ import * as Sentry from "@sentry/react-native"
 import { Stack, useRouter, useSegments } from "expo-router"
 import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
+import AdBanner, { AD_BANNER_HEIGHT } from "@/components/AdBanner"
 import '@/css/global.css'
 
 const PUBLIC_SEGMENTS = ['login', 'signup', 'landing', 'reset-password', 'privacy', 'terms', 'changelog']
@@ -44,11 +45,15 @@ export default Sentry.wrap(function RootLayout() {
 
   if (loading) return null
 
+  const inPublicGroup = PUBLIC_SEGMENTS.includes(segments[0] as string)
+  const showAds = !!session && !inPublicGroup
+
 return (
-    <div style={{ minHeight: '100vh', backgroundColor: 'var(--color-background)', color: 'var(--color-text)' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: 'var(--color-background)', color: 'var(--color-text)', paddingBottom: showAds ? `${AD_BANNER_HEIGHT}px` : 0 }}>
       <Sentry.ErrorBoundary fallback={<p style={{ padding: '24px' }}>Something went wrong. Please refresh the page.</p>}>
         <Stack screenOptions={{ headerShown: false }} />
       </Sentry.ErrorBoundary>
+      {showAds && <AdBanner />}
     </div>
   )
 });

@@ -11,6 +11,12 @@
 const fs = require('fs')
 const path = require('path')
 
+// This script runs as its own `node` process after `expo export`, so it
+// doesn't inherit the .env values Expo's CLI loads internally for the build
+// step — load them the same way Expo does so EXPO_PUBLIC_* vars from .env
+// are visible here too (e.g. for the AdSense client ID below).
+require('@expo/env').load(path.join(__dirname, '..'))
+
 const distDir = path.join(__dirname, '..', 'dist')
 const indexPath = path.join(distDir, 'index.html')
 
@@ -28,6 +34,21 @@ if (!html.includes('name="description"')) {
   console.log('Injected meta description into dist/index.html')
 } else {
   console.log('Meta description already present, skipping')
+}
+
+// AdSense's auto ads script must be present in the document <head> for site
+// verification and ad serving. Only injected when the client ID is set (i.e.
+// once the AdSense application is approved) — set EXPO_PUBLIC_ADSENSE_CLIENT_ID
+// in Vercel's project env vars to turn this on, nothing else to change here.
+const adsenseClientId = process.env.EXPO_PUBLIC_ADSENSE_CLIENT_ID
+if (adsenseClientId && !html.includes('pagead2.googlesyndication.com')) {
+  html = fs.readFileSync(indexPath, 'utf8')
+  const adsenseScript = `<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adsenseClientId}" crossorigin="anonymous"></script>`
+  html = html.replace('</head>', `    ${adsenseScript}\n  </head>`)
+  fs.writeFileSync(indexPath, html)
+  console.log('Injected AdSense script into dist/index.html')
+} else if (!adsenseClientId) {
+  console.log('EXPO_PUBLIC_ADSENSE_CLIENT_ID not set, skipping AdSense script injection')
 }
 
 const aboutHtml = `<!DOCTYPE html>
