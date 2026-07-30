@@ -18,7 +18,7 @@ export default function Privacy() {
 
       <h2>What we collect</h2>
       <ul>
-        <li><strong>Account information</strong>: your email address, and a password (which we never see in plain text — it's handled entirely by our authentication provider, Supabase). If you sign in with Google, we receive your email and basic profile info from Google instead.</li>
+        <li><strong>Account information</strong>: your email address, and a password (which we never see in plain text — it's handled entirely by our authentication provider, Supabase). If you choose "Sign in with Google" instead, Google shares your email address and basic profile info (name, profile picture) with us. We request this data solely to create and authenticate your account — to identify you when you log in and let you access your own trackers. We do not use it for advertising, and we do not share it with anyone beyond the service providers listed below that are necessary to run the app.</li>
         <li><strong>Content you create</strong>: tracker titles, tabs, sections, fields, notes, and any images you upload.</li>
         <li><strong>Your progress</strong>: which checkboxes, numbers, and dropdowns you've filled in on any tracker, including public ones you haven't made your own copy of.</li>
       </ul>
