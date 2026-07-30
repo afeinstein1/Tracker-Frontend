@@ -4,6 +4,7 @@ import { loadTracker, saveColumnValues, saveTracker, saveTrackerValues, copyTrac
 import { supabase } from "@/lib/supabase"
 import { TrackerView } from "@/renderer/TrackerRenderer"
 import { Tracker } from "@/Types/field"
+import AdBanner from "@/components/AdBanner"
 
 export default function TrackerPage() {
   const { id, created } = useLocalSearchParams<{ id: string; created?: string }>()
@@ -70,6 +71,7 @@ export default function TrackerPage() {
         onCopy={isOwner ? undefined : handleCopy}
         autoOpenEdit={created === '1'}
       />
+      <AdBanner />
     </div>
   )
 }
