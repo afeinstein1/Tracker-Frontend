@@ -35,11 +35,17 @@ export default function AdBanner() {
         zIndex: 100,
         display: 'flex',
         justifyContent: 'center',
+        // While a new ad unit is still calibrating, Google can reserve a
+        // placeholder taller than the real creative before it settles. Since
+        // this wrapper is fixed over page content, an oversized-but-empty
+        // reservation would otherwise block clicks on whatever's underneath —
+        // so only the actual ad (which sets its own pointerEvents) is clickable.
+        pointerEvents: 'none',
       }}
     >
       <ins
         className="adsbygoogle"
-        style={{ display: 'block', width: '100%', maxWidth: '728px' }}
+        style={{ display: 'block', width: '100%', maxWidth: '728px', pointerEvents: 'auto' }}
         data-ad-client={ADSENSE_CLIENT_ID}
         data-ad-slot={ADSENSE_FOOTER_SLOT_ID}
         data-ad-format="auto"
