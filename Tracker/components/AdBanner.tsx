@@ -18,28 +18,23 @@ export default function AdBanner() {
   if (!enabled) return null
 
   return (
+    // Deliberately static/in-flow, not position: fixed. A fixed footer needs
+    // its height matched by reserved space elsewhere in the page so it never
+    // overlaps content — but Expo's web boilerplate pins body/#root to a
+    // fixed 100vh box, so padding added anywhere to "reserve" space for a
+    // fixed element gets absorbed into that box instead of extending real
+    // scroll room. Rendering the ad as a normal block at the end of the page
+    // sidesteps that entirely: it's just the last thing on the page, so it
+    // can't overlap anything by construction.
     <div
       style={{
-        position: 'fixed',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        height: 'var(--ad-banner-height)',
+        width: '100%',
         backgroundColor: 'var(--color-surface)',
         borderTop: '1px solid var(--color-border)',
-        zIndex: 100,
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        overflow: 'hidden',
-        // Belt-and-suspenders: the explicit height above is what tells Google's
-        // responsive algorithm what size to serve in the first place, so this
-        // should rarely trigger — but while a new ad unit is still calibrating,
-        // it can occasionally still reserve more than asked for. Since this
-        // wrapper sits fixed over page content, an oversized-but-empty
-        // reservation would otherwise block clicks underneath it — so only the
-        // actual ad (which sets its own pointerEvents) is clickable.
-        pointerEvents: 'none',
+        padding: '4px 0',
       }}
     >
       {/*
@@ -51,7 +46,7 @@ export default function AdBanner() {
       */}
       <ins
         className="adsbygoogle"
-        style={{ display: 'inline-block', width: '320px', height: '50px', pointerEvents: 'auto' }}
+        style={{ display: 'inline-block', width: '320px', height: '50px' }}
         data-ad-client={ADSENSE_CLIENT_ID}
         data-ad-slot={ADSENSE_FOOTER_SLOT_ID}
       />

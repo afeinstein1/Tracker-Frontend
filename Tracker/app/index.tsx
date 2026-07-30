@@ -5,6 +5,7 @@ import { Tracker } from "@/Types/field"
 import { useFocusEffect } from "expo-router"
 import { useCallback } from "react"
 import { useRouter } from "expo-router"
+import AdBanner from "@/components/AdBanner"
 import '@/css/global.css'
 
 export default function Index() {
@@ -127,6 +128,7 @@ async function handleDelete() {
           </div>
         </div>
       )}
+      <AdBanner />
     </div>
   )
 }
