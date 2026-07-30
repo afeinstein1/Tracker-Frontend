@@ -269,7 +269,7 @@ const totalProgress = fields.reduce((sum, field) => {
 
 return (
   <div style={{ width: '90%', margin: '0 auto' }}>
-    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
       <h1>{tracker.title}</h1>
       {isEditMode && (
         <button onClick={() => setEditTarget({ type: "tracker", item: tracker })}>✏️</button>
@@ -289,7 +289,7 @@ return (
 
     <Meter label="Overall Progress" value={Math.round(percentage)} maxValue={100} />
 
-    <div style={{ display: 'flex', gap: '8px' }}>
+    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
       {tracker.tabs.map((tab, index) => (
         <div key={tab.id} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
           <button onClick={() => setActiveTab(index)}>

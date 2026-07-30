@@ -68,13 +68,17 @@ export function EditPopup({ tracker, target, onSave, onDelete, onClose }: Props)
       position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
       backgroundColor: 'rgba(0,0,0,0.5)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
+      padding: '16px',
       zIndex: 1000
     }}>
     <div style={{
       backgroundColor: 'var(--color-background)',
       borderRadius: '12px',
       padding: '24px',
-      minWidth: '300px',
+      width: '100%',
+      maxWidth: '500px',
+      maxHeight: '90vh',
+      overflowY: 'auto',
       display: 'flex',
       flexDirection: 'column',
       gap: '12px',

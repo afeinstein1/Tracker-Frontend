@@ -14,7 +14,7 @@ export function DropdownFieldView({ field, onChange, disabled = false }: Props) 
         value={field.selected}
         onChange={e => onChange(Number(e.target.value))}
         disabled={disabled}
-        style={{ width: '150px', padding: '4px' }}
+        style={{ width: '100%', maxWidth: '200px', padding: '4px' }}
       >
         {field.options.map((option, index) => (   
           <option key={index} value={index}>{option}</option>
