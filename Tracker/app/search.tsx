@@ -52,7 +52,7 @@ export default function Search() {
 
   return (
     <div style={{ width: '90%', margin: '0 auto', paddingTop: '24px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '24px' }}>
         <h1 style={{ margin: 0 }}>Find Trackers</h1>
         <button onClick={() => router.push('/')} style={{ marginLeft: 'auto' }}>My Trackers</button>
       </div>
@@ -76,7 +76,9 @@ export default function Search() {
               padding: '16px',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'space-between'
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '8px'
             }}>
               <h2 style={{ margin: 0 }}>{tracker.title}</h2>
               <div style={{ display: 'flex', gap: '8px' }}>

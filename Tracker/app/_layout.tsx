@@ -5,7 +5,7 @@ import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
 import '@/css/global.css'
 
-const PUBLIC_SEGMENTS = ['login', 'signup', 'landing', 'reset-password', 'privacy', 'terms']
+const PUBLIC_SEGMENTS = ['login', 'signup', 'landing', 'reset-password', 'privacy', 'terms', 'changelog']
 
 export default Sentry.wrap(function RootLayout() {
   const [session, setSession] = useState<any>(null)

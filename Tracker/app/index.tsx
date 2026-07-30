@@ -63,9 +63,9 @@ async function handleDelete() {
 
   return (
     <div style={{ width: '90%', margin: '0 auto' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', marginBottom: '24px' }}>
         <h1>My Trackers</h1>
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           <button onClick={handleCreate}>+ New Tracker</button>
           <button onClick={() => router.push('/search')}>Find Trackers</button>
           <button onClick={() => router.push('/settings')}>Settings</button>
@@ -84,13 +84,15 @@ async function handleDelete() {
               padding: '16px',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'space-between'
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '8px'
             }}>
               <h2 style={{ margin: 0 }}>{tracker.title}</h2>
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button onClick={() => router.push(`/tracker/${tracker.id}`)}>Open</button>
                 <button onClick={() => setPendingDeleteId(tracker.id)} style={{ color: 'red' }}>Delete</button>
-                
+
               </div>
             </div>
           ))}
@@ -101,13 +103,15 @@ async function handleDelete() {
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
           backgroundColor: 'rgba(0,0,0,0.5)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: '16px',
           zIndex: 1000
         }}>
           <div style={{
             backgroundColor: 'var(--color-background)',
             borderRadius: '12px',
             padding: '24px',
-            minWidth: '300px',
+            width: '100%',
+            maxWidth: '500px',
             display: 'flex',
             flexDirection: 'column',
             gap: '12px',
