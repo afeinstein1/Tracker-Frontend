@@ -1,10 +1,11 @@
 import { useRouter } from "expo-router"
+import AdBanner, { AD_BANNER_HEIGHT } from "@/components/AdBanner"
 
 export default function Landing() {
   const router = useRouter()
 
   return (
-    <div style={{ width: '90%', maxWidth: '700px', margin: '0 auto', paddingTop: '60px', textAlign: 'center' }}>
+    <div style={{ width: '90%', maxWidth: '700px', margin: '0 auto', paddingTop: '60px', paddingBottom: AD_BANNER_HEIGHT, textAlign: 'center' }}>
       <h1 style={{ fontSize: '28px', marginBottom: '4px' }}>Tracker Create</h1>
       <p style={{ fontSize: '20px', fontWeight: 600, marginBottom: '16px' }}>Track anything.</p>
       <p style={{ fontSize: '17px', color: 'var(--color-text-muted)', marginBottom: '32px', lineHeight: 1.6 }}>
@@ -20,6 +21,7 @@ export default function Landing() {
         <a onClick={() => router.push('/privacy')} style={{ cursor: 'pointer', color: 'var(--color-accent)' }}>Privacy Policy</a>
         <a onClick={() => router.push('/terms')} style={{ cursor: 'pointer', color: 'var(--color-accent)' }}>Terms of Service</a>
       </div>
+      <AdBanner />
     </div>
   )
 }
