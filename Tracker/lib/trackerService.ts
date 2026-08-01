@@ -1,5 +1,38 @@
 import { supabase } from './supabase'
 import { Tracker, TrackerTab, TrackerSection, TrackerField, TabUnlockCondition, SectionUnlockCondition } from '@/Types/field'
+import { isPremiumUser } from './premium'
+
+// Upserting row-by-row in a loop turns into thousands of sequential network round trips for
+// a large import (hundreds of fields, each touching multiple tables). Chunking into a handful
+// of bulk upserts keeps large saves (like CSV import) from taking minutes.
+const UPSERT_BATCH_SIZE = 500
+
+async function batchUpsert(table: string, rows: any[], onConflict?: string): Promise<void> {
+  for (let i = 0; i < rows.length; i += UPSERT_BATCH_SIZE) {
+    const chunk = rows.slice(i, i + UPSERT_BATCH_SIZE)
+    const { error } = onConflict
+      ? await supabase.from(table).upsert(chunk, { onConflict })
+      : await supabase.from(table).upsert(chunk)
+    if (error) throw error
+  }
+}
+
+// supabase-js sends .in() filters as part of the request URL, so a large id list (hundreds of
+// fields, as a big CSV import produces) can blow past the server's URL length limit and come
+// back as a bad request. Chunking the id list into several smaller queries avoids that.
+const SELECT_IN_CHUNK_SIZE = 150
+
+async function chunkedSelect<T>(ids: string[], queryFn: (chunk: string[]) => PromiseLike<{ data: T[] | null; error: any }>): Promise<T[]> {
+  if (ids.length === 0) return []
+  const results: T[] = []
+  for (let i = 0; i < ids.length; i += SELECT_IN_CHUNK_SIZE) {
+    const chunk = ids.slice(i, i + SELECT_IN_CHUNK_SIZE)
+    const { data, error } = await queryFn(chunk)
+    if (error) throw error
+    results.push(...(data ?? []))
+  }
+  return results
+}
 
 
 function remapUnlockCondition<T extends { type: string; tabId?: string; fieldId?: string }>(
@@ -59,6 +92,9 @@ export async function saveTracker(tracker: Tracker): Promise<void> {
     }
   }
 
+  const allColumnRows: any[] = []
+  const allFieldRows: any[] = []
+
   for (const [tabIndex, tab] of tracker.tabs.entries()) {
     const { error: tabError } = await supabase
       .from('tracker_tabs')
@@ -103,12 +139,9 @@ export async function saveTracker(tracker: Tracker): Promise<void> {
         }
       }
 
-      for (const [columnIndex, column] of section.columns.entries()) {
-        const { error: columnError } = await supabase
-          .from('section_columns')
-          .upsert({ id: column.id, section_id: section.id, label: column.label, type: column.type, order: columnIndex, options: column.type === 'dropdown' ? (column.options ?? []) : null })
-        if (columnError) throw columnError
-      }
+      section.columns.forEach((column, columnIndex) => {
+        allColumnRows.push({ id: column.id, section_id: section.id, label: column.label, type: column.type, order: columnIndex, options: column.type === 'dropdown' ? (column.options ?? []) : null })
+      })
 
       // Delete removed fields
       const { data: existingFields } = await supabase
@@ -126,23 +159,23 @@ export async function saveTracker(tracker: Tracker): Promise<void> {
         }
       }
 
-      for (const [fieldIndex, field] of section.fields.entries()) {
-        const { error: fieldError } = await supabase
-          .from('tracker_fields')
-          .upsert({
-            id: field.id,
-            section_id: section.id,
-            label: field.label,
-            type: field.type,
-            weight: field.weight,
-            max: field.type === 'number' ? field.max : null,
-            options: field.type === 'dropdown' ? field.options : null,
-            order: fieldIndex
-          })
-        if (fieldError) throw fieldError
-      }
+      section.fields.forEach((field, fieldIndex) => {
+        allFieldRows.push({
+          id: field.id,
+          section_id: section.id,
+          label: field.label,
+          type: field.type,
+          weight: field.weight,
+          max: field.type === 'number' ? field.max : null,
+          options: field.type === 'dropdown' ? field.options : null,
+          order: fieldIndex
+        })
+      })
     }
   }
+
+  await batchUpsert('section_columns', allColumnRows)
+  await batchUpsert('tracker_fields', allFieldRows)
 }
 const IMAGE_LIMIT = 50
 
@@ -165,7 +198,7 @@ export async function uploadImage(file: File, fieldId: string): Promise<string> 
   if (!user) throw new Error('Not authenticated')
 
   const count = await getUserImageCount()
-  if (count >= IMAGE_LIMIT) throw new Error(`Image limit of ${IMAGE_LIMIT} reached`)
+  if (!isPremiumUser(user) && count >= IMAGE_LIMIT) throw new Error(`Image limit of ${IMAGE_LIMIT} reached`)
 
   const ext = file.name.split('.').pop()
   const path = `${user.id}/${fieldId}-${crypto.randomUUID()}.${ext}`
@@ -215,17 +248,13 @@ export async function saveTrackerValues(tracker: Tracker): Promise<void> {
     tab.sections.flatMap(section => section.fields)
   )
 
-  for (const field of fields) {
-    const { error } = await supabase
-      .from('tracker_values')
-      .upsert({
-        field_id: field.id,
-        user_id: user.id,
-        checked: field.type === 'checkbox' ? field.checked : false,
-        value: field.type === 'number' ? field.value : field.type === 'dropdown' ? field.selected : 0
-      }, { onConflict: 'field_id,user_id' })
-    if (error) throw error
-  }
+  const rows = fields.map(field => ({
+    field_id: field.id,
+    user_id: user.id,
+    checked: field.type === 'checkbox' ? field.checked : false,
+    value: field.type === 'number' ? field.value : field.type === 'dropdown' ? field.selected : 0
+  }))
+  await batchUpsert('tracker_values', rows, 'field_id,user_id')
 }
 
 export async function saveColumnValues(tracker: Tracker): Promise<void> {
@@ -236,19 +265,16 @@ export async function saveColumnValues(tracker: Tracker): Promise<void> {
     tab.sections.flatMap(section => section.fields)
   )
 
-  for (const field of fields) {
-    for (const [columnId, value] of Object.entries(field.columnValues)) {
-      const { error } = await supabase
-        .from('field_column_values')
-        .upsert({
-          field_id: field.id,
-          column_id: columnId,
-          user_id: user.id,
-          value
-        }, { onConflict: 'field_id,column_id,user_id' })
-      if (error) throw error
-    }
-  }
+  const rows = fields.flatMap(field =>
+    Object.entries(field.columnValues).map(([columnId, value]) => ({
+      field_id: field.id,
+      column_id: columnId,
+      user_id: user.id,
+      value
+    }))
+  )
+  console.log(`[saveColumnValues] fields=${fields.length} rows=${rows.length}`, rows[0])
+  await batchUpsert('field_column_values', rows, 'field_id,column_id,user_id')
 }
 
 export async function loadTracker(trackerId: string): Promise<Tracker> {
@@ -269,40 +295,25 @@ export async function loadTracker(trackerId: string): Promise<Tracker> {
     .order('order')
   if (tabsError) throw tabsError
 
-  const { data: sectionsData, error: sectionsError } = await supabase
-    .from('tracker_sections')
-    .select('*')
-    .in('tab_id', tabsData.map(tab => tab.id))
-    .order('order')
-  if (sectionsError) throw sectionsError
+  const sectionsData = await chunkedSelect<any>(tabsData.map(tab => tab.id), chunk =>
+    supabase.from('tracker_sections').select('*').in('tab_id', chunk).order('order')
+  )
 
-  const { data: fieldsData, error: fieldsError } = await supabase
-    .from('tracker_fields')
-    .select('*')
-    .in('section_id', sectionsData.map(section => section.id))
-    .order('order')
-  if (fieldsError) throw fieldsError
+  const fieldsData = await chunkedSelect<any>(sectionsData.map(section => section.id), chunk =>
+    supabase.from('tracker_fields').select('*').in('section_id', chunk).order('order')
+  )
 
-  const { data: valuesData, error: valuesError } = await supabase
-    .from('tracker_values')
-    .select('*')
-    .in('field_id', fieldsData.map(field => field.id))
-    .eq('user_id', user.id)
-  if (valuesError) throw valuesError
+  const valuesData = await chunkedSelect<any>(fieldsData.map(field => field.id), chunk =>
+    supabase.from('tracker_values').select('*').in('field_id', chunk).eq('user_id', user.id)
+  )
 
-  const { data: columnsData, error: columnsError } = await supabase
-    .from('section_columns')
-    .select('*')
-    .in('section_id', sectionsData.map(section => section.id))
-    .order('order')
-  if (columnsError) throw columnsError
-  
-  const { data: columnValuesData, error: columnValuesError } = await supabase
-    .from('field_column_values')
-    .select('*')
-    .in('field_id', fieldsData.map(field => field.id))
-    .eq('user_id', trackerData.owner_id)
-  if (columnValuesError) throw columnValuesError
+  const columnsData = await chunkedSelect<any>(sectionsData.map(section => section.id), chunk =>
+    supabase.from('section_columns').select('*').in('section_id', chunk).order('order')
+  )
+
+  const columnValuesData = await chunkedSelect<any>(fieldsData.map(field => field.id), chunk =>
+    supabase.from('field_column_values').select('*').in('field_id', chunk).eq('user_id', trackerData.owner_id)
+  )
 
   const tabs: TrackerTab[] = tabsData.map(tab => ({
     id: tab.id,
@@ -388,6 +399,20 @@ export async function loadUserTrackers(): Promise<Tracker[]> {
   return Promise.all(data.map(tracker => loadTracker(tracker.id)))
 }
 
+const TRACKER_LIMIT = 10
+
+export async function getUserTrackerCount(): Promise<number> {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+
+  const { count, error } = await supabase
+    .from('trackers')
+    .select('id', { count: 'exact', head: true })
+    .eq('owner_id', user.id)
+  if (error) throw error
+  return count ?? 0
+}
+
 export async function loadPublicTrackers(): Promise<Tracker[]> {
   const { data, error } = await supabase
     .from('trackers')
@@ -411,6 +436,11 @@ export async function createTracker(title: string): Promise<Tracker> {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Not authenticated')
 
+  if (!isPremiumUser(user)) {
+    const count = await getUserTrackerCount()
+    if (count >= TRACKER_LIMIT) throw new Error(`Tracker limit of ${TRACKER_LIMIT} reached`)
+  }
+
   const newTracker: Tracker = {
     id: crypto.randomUUID(),
     title,
@@ -432,22 +462,22 @@ function extractStoragePath(url: string): string | null {
   return url.slice(idx + marker.length).split('?')[0]
 }
 
-async function copyFieldImage(url: string, newFieldId: string, ownerId: string): Promise<string> {
+async function copyFieldImage(url: string, newFieldId: string, ownerId: string): Promise<{ url: string; copied: boolean }> {
   const fromPath = extractStoragePath(url)
-  if (!fromPath) return url
+  if (!fromPath) return { url, copied: false }
 
   const ext = fromPath.split('.').pop()
   const toPath = `${ownerId}/${newFieldId}-${crypto.randomUUID()}.${ext}`
 
   const { error: copyError } = await supabase.storage.from('tracker-images').copy(fromPath, toPath)
-  if (copyError) return url
+  if (copyError) return { url, copied: false }
 
   const { data, error: urlError } = await supabase.storage
     .from('tracker-images')
     .createSignedUrl(toPath, 60 * 60 * 24 * 365)
-  if (urlError || !data) return url
+  if (urlError || !data) return { url, copied: false }
 
-  return data.signedUrl
+  return { url: data.signedUrl, copied: true }
 }
 export async function copyTracker(trackerId: string): Promise<Tracker> {
   const original = await loadTracker(trackerId)
@@ -459,6 +489,8 @@ export async function copyTracker(trackerId: string): Promise<Tracker> {
     original.tabs.flatMap(tab => tab.sections.flatMap(section => section.fields))
       .map(field => [field.id, crypto.randomUUID()])
   )
+
+  let imagesCopied = 0
 
   const tabs: TrackerTab[] = await Promise.all(original.tabs.map(async tab => {
     const sections: TrackerSection[] = await Promise.all(tab.sections.map(async section => {
@@ -472,7 +504,9 @@ export async function copyTracker(trackerId: string): Promise<Tracker> {
           const newColId = columnIdMap.get(colId) ?? colId
           const col = section.columns.find(c => c.id === colId)
           if (col?.type === 'image' && value) {
-            columnValues[newColId] = await copyFieldImage(value, newFieldId, user.id)
+            const result = await copyFieldImage(value, newFieldId, user.id)
+            columnValues[newColId] = result.url
+            if (result.copied) imagesCopied++
           } else {
             columnValues[newColId] = value
           }
@@ -512,5 +546,17 @@ export async function copyTracker(trackerId: string): Promise<Tracker> {
 
   await saveTracker(copied)
   await saveColumnValues(copied)
+
+  if (imagesCopied > 0) {
+    // Copying a tracker always succeeds in full, even if it pushes the
+    // owner's image count past IMAGE_LIMIT - the limit only blocks new
+    // uploads, never a copy.
+    const count = await getUserImageCount()
+    const { error: countError } = await supabase
+      .from('user_image_usage')
+      .upsert({ user_id: user.id, image_count: count + imagesCopied })
+    if (countError) throw countError
+  }
+
   return copied
 }

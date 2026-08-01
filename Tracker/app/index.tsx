@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { supabase } from '../lib/supabase'
 import { loadUserTrackers, createTracker, deleteTracker } from '../lib/trackerService'
+import { useIsPremium } from '../lib/premium'
 import { Tracker } from "@/Types/field"
 import { useFocusEffect } from "expo-router"
 import { useCallback } from "react"
@@ -13,6 +14,7 @@ export default function Index() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
+  const isPremium = useIsPremium()
 
 
   useFocusEffect(
@@ -68,6 +70,7 @@ async function handleDelete() {
         <h1>My Trackers</h1>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           <button onClick={handleCreate}>+ New Tracker</button>
+          {isPremium && <button onClick={() => router.push('/import-csv')}>Import from CSV</button>}
           <button onClick={() => router.push('/search')}>Find Trackers</button>
           <button onClick={() => router.push('/settings')}>Settings</button>
           <button onClick={handleLogout}>Log Out</button>

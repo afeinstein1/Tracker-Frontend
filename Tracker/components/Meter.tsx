@@ -14,7 +14,7 @@ export function Meter({ label, value, maxValue, ...props }: MeterProps) {
       {({ percentage }) => (
         <>
           <Label>{label}</Label>
-          <span className="value">{value}%</span>
+          <span className="value">{value.toFixed(2)}%</span>
           <div className="track inset">
             <div
               className="fill"

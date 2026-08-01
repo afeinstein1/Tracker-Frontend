@@ -1,18 +1,22 @@
 import { useEffect } from 'react'
 import { Platform } from 'react-native'
+import { useIsPremium } from '@/lib/premium'
 
 const ADSENSE_CLIENT_ID = process.env.EXPO_PUBLIC_ADSENSE_CLIENT_ID
 const ADSENSE_FOOTER_SLOT_ID = process.env.EXPO_PUBLIC_ADSENSE_FOOTER_SLOT_ID
 
-const ENABLED = Platform.OS === 'web' && !!ADSENSE_CLIENT_ID && !!ADSENSE_FOOTER_SLOT_ID
+const ADS_CONFIGURED = Platform.OS === 'web' && !!ADSENSE_CLIENT_ID && !!ADSENSE_FOOTER_SLOT_ID
 
 // 50px ad + 4px top/bottom padding + 1px top border. Pages rendering
 // AdBanner should reserve this much bottom padding (only when the banner
 // is actually enabled) so the fixed bar never covers the last bit of content.
-export const AD_BANNER_HEIGHT = ENABLED ? 59 : 0
+// Based on ad config only (not premium status) so layout doesn't jump once
+// the async premium check resolves.
+export const AD_BANNER_HEIGHT = ADS_CONFIGURED ? 59 : 0
 
 export default function AdBanner() {
-  const enabled = ENABLED
+  const isPremium = useIsPremium()
+  const enabled = ADS_CONFIGURED && !isPremium
 
   useEffect(() => {
     if (!enabled) return

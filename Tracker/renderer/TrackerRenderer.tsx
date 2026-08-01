@@ -287,7 +287,7 @@ return (
       )}
     </div>
 
-    <Meter label="Overall Progress" value={Math.round(percentage)} maxValue={100} />
+    <Meter label="Overall Progress" value={percentage} maxValue={100} />
 
     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
       {tracker.tabs.map((tab, index) => (
@@ -316,7 +316,7 @@ return (
           onEditTarget={setEditTarget}
           onAddSection={handleAddSection}
           onAddField={handleAddField}
-          overallPercentage={Math.round(percentage)}
+          overallPercentage={percentage}
           tabPercentages={tabPercentages}
           disabled={readOnly}
         />
