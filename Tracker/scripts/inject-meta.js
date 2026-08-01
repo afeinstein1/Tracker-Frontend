@@ -41,6 +41,8 @@ if (!html.includes('name="description"')) {
 // once the AdSense application is approved) — set EXPO_PUBLIC_ADSENSE_CLIENT_ID
 // in Vercel's project env vars to turn this on, nothing else to change here.
 const adsenseClientId = process.env.EXPO_PUBLIC_ADSENSE_CLIENT_ID
+const adsenseSlotId = process.env.EXPO_PUBLIC_ADSENSE_FOOTER_SLOT_ID
+const adsenseEnabled = !!adsenseClientId && !!adsenseSlotId
 if (adsenseClientId && !html.includes('pagead2.googlesyndication.com')) {
   html = fs.readFileSync(indexPath, 'utf8')
   const adsenseScript = `<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adsenseClientId}" crossorigin="anonymous"></script>`
@@ -51,13 +53,33 @@ if (adsenseClientId && !html.includes('pagead2.googlesyndication.com')) {
   console.log('EXPO_PUBLIC_ADSENSE_CLIENT_ID not set, skipping AdSense script injection')
 }
 
+// This page is also the one reliable place to put an ad unit for AdSense's
+// own review crawler: it's static (no JS bundle, no auth check, no
+// client-side redirect) so it's guaranteed to render — unlike index.tsx and
+// tracker/[id].tsx, which sit behind an async auth check, or "/", which
+// client-redirects unauthenticated visitors to /landing only after that
+// check resolves. See the comment above about.html's origin for the same
+// reasoning applied to Google's OAuth review crawler.
+const adsenseHeadTag = adsenseEnabled
+  ? `\n  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adsenseClientId}" crossorigin="anonymous"></script>`
+  : ''
+
+const adsenseBodyMarkup = adsenseEnabled
+  ? `
+  <div style="width: 100%; display: flex; justify-content: center; padding: 16px 0; border-top: 1px solid #ccc; margin-top: 32px;">
+    <ins class="adsbygoogle" style="display:inline-block;width:320px;height:50px" data-ad-client="${adsenseClientId}" data-ad-slot="${adsenseSlotId}"></ins>
+  </div>
+  <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+`
+  : ''
+
 const aboutHtml = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Tracker Create</title>
-  <meta name="description" content="${description}" />
+  <meta name="description" content="${description}" />${adsenseHeadTag}
   <style>
     body { font-family: system-ui, -apple-system, sans-serif; max-width: 700px; margin: 0 auto; padding: 40px 20px; line-height: 1.6; color: #111; }
     h1 { margin-bottom: 4px; }
@@ -100,7 +122,7 @@ const aboutHtml = `<!DOCTYPE html>
     <a href="https://trackercreate.com/privacy">Privacy Policy</a> ·
     <a href="https://trackercreate.com/terms">Terms of Service</a>
   </p>
-</body>
+${adsenseBodyMarkup}</body>
 </html>
 `
 
