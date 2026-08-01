@@ -5,7 +5,7 @@ import { Tracker } from "@/Types/field"
 import { useFocusEffect } from "expo-router"
 import { useCallback } from "react"
 import { useRouter } from "expo-router"
-import AdBanner from "@/components/AdBanner"
+import AdBanner, { AD_BANNER_HEIGHT } from "@/components/AdBanner"
 import '@/css/global.css'
 
 export default function Index() {
@@ -63,7 +63,7 @@ async function handleDelete() {
   if (error) return <p>Error: {error}</p>
 
   return (
-    <div style={{ width: '90%', margin: '0 auto' }}>
+    <div style={{ width: '90%', margin: '0 auto', paddingBottom: AD_BANNER_HEIGHT }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', marginBottom: '24px' }}>
         <h1>My Trackers</h1>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>

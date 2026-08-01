@@ -4,7 +4,7 @@ import { loadTracker, saveColumnValues, saveTracker, saveTrackerValues, copyTrac
 import { supabase } from "@/lib/supabase"
 import { TrackerView } from "@/renderer/TrackerRenderer"
 import { Tracker } from "@/Types/field"
-import AdBanner from "@/components/AdBanner"
+import AdBanner, { AD_BANNER_HEIGHT } from "@/components/AdBanner"
 
 export default function TrackerPage() {
   const { id, created } = useLocalSearchParams<{ id: string; created?: string }>()
@@ -60,7 +60,7 @@ export default function TrackerPage() {
   if (!tracker) return <p>Tracker not found</p>
 
   return (
-    <div>
+    <div style={{ paddingBottom: AD_BANNER_HEIGHT }}>
       <Stack.Screen options={{ headerShown: false }} />
       <button onClick={() => router.canGoBack() ? router.back() : router.push('/')} style={{ margin: '16px' }}>← Back</button>
       <TrackerView

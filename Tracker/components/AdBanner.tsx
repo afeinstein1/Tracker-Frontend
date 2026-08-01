@@ -4,8 +4,15 @@ import { Platform } from 'react-native'
 const ADSENSE_CLIENT_ID = process.env.EXPO_PUBLIC_ADSENSE_CLIENT_ID
 const ADSENSE_FOOTER_SLOT_ID = process.env.EXPO_PUBLIC_ADSENSE_FOOTER_SLOT_ID
 
+const ENABLED = Platform.OS === 'web' && !!ADSENSE_CLIENT_ID && !!ADSENSE_FOOTER_SLOT_ID
+
+// 50px ad + 4px top/bottom padding + 1px top border. Pages rendering
+// AdBanner should reserve this much bottom padding (only when the banner
+// is actually enabled) so the fixed bar never covers the last bit of content.
+export const AD_BANNER_HEIGHT = ENABLED ? 59 : 0
+
 export default function AdBanner() {
-  const enabled = Platform.OS === 'web' && !!ADSENSE_CLIENT_ID && !!ADSENSE_FOOTER_SLOT_ID
+  const enabled = ENABLED
 
   useEffect(() => {
     if (!enabled) return
@@ -18,16 +25,18 @@ export default function AdBanner() {
   if (!enabled) return null
 
   return (
-    // Deliberately static/in-flow, not position: fixed. A fixed footer needs
-    // its height matched by reserved space elsewhere in the page so it never
-    // overlaps content — but Expo's web boilerplate pins body/#root to a
-    // fixed 100vh box, so padding added anywhere to "reserve" space for a
-    // fixed element gets absorbed into that box instead of extending real
-    // scroll room. Rendering the ad as a normal block at the end of the page
-    // sidesteps that entirely: it's just the last thing on the page, so it
-    // can't overlap anything by construction.
+    // Fixed to the viewport bottom like a persistent tab bar, so it stays
+    // visible on tall pages instead of scrolling out of view with the rest
+    // of the content. Because it's fixed it's removed from document flow
+    // entirely, so it can't be squished or pushed around by RN Web's
+    // fixed-height root wrapper the way an in-flow footer would be -
+    // callers just need to reserve AD_BANNER_HEIGHT of bottom padding.
     <div
       style={{
+        position: 'fixed',
+        bottom: 0,
+        left: 0,
+        right: 0,
         width: '100%',
         backgroundColor: 'var(--color-surface)',
         borderTop: '1px solid var(--color-border)',
@@ -35,6 +44,7 @@ export default function AdBanner() {
         justifyContent: 'center',
         alignItems: 'center',
         padding: '4px 0',
+        zIndex: 500,
       }}
     >
       {/*
