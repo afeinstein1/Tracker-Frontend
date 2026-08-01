@@ -20,6 +20,9 @@ export default function Landing() {
         <a onClick={() => router.push('/changelog')} style={{ cursor: 'pointer', color: 'var(--color-accent)' }}>Changelog</a>
         <a onClick={() => router.push('/privacy')} style={{ cursor: 'pointer', color: 'var(--color-accent)' }}>Privacy Policy</a>
         <a onClick={() => router.push('/terms')} style={{ cursor: 'pointer', color: 'var(--color-accent)' }}>Terms of Service</a>
+        {/* Real href (not router.push) so it's a genuine crawlable link to the
+            static /about.html page, not just a client-side route. */}
+        <a href="/about.html" style={{ color: 'var(--color-accent)' }}>About</a>
       </div>
       <AdBanner />
     </div>
