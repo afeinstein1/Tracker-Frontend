@@ -71,7 +71,7 @@ export function TabView({ allTabs, tab, onFieldChange, onColumnValueChange, isEd
             cursor: 'not-allowed'
           }} />
         )}
-        <Meter label="Tab Progress" value={Math.round(percentage)} maxValue={100} />
+        <Meter label="Tab Progress" value={percentage} maxValue={100} />
         {tab.sections.map(section => {
           const isSectionLocked = !isEditMode && section.unlockCondition !== undefined && (
             section.unlockCondition.type === "overall"

@@ -3,6 +3,12 @@ import * as Sentry from "@sentry/react-native"
 import { Stack, useRouter, useSegments } from "expo-router"
 import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
+// CSS @import doesn't get resolved by Metro's web bundler - theme.css and utilities.css were
+// never actually loading anywhere in the app (only reachable via @import from Meter.css/Form.css).
+// Importing them directly here, once, makes their custom properties and utility classes available
+// everywhere, same as global.css.
+import '@/css/theme.css'
+import '@/css/utilities.css'
 import '@/css/global.css'
 
 const PUBLIC_SEGMENTS = ['login', 'signup', 'landing', 'reset-password', 'privacy', 'terms', 'changelog']

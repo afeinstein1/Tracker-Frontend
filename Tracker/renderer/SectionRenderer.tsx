@@ -20,12 +20,19 @@ export function TrackerSectionView({ section, onFieldChange, onColumnValueChange
 
   function renderColumnValue(fieldId: string, col: TrackerSection['columns'][number], value: string) {
     if (col.type === 'text') {
+      if (!isEditMode || disabled) {
+        return (
+          <div style={{ width: '100%', padding: '4px', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+            {value}
+          </div>
+        )
+      }
       return (
         <textarea
           value={value}
           onChange={e => onColumnValueChange(fieldId, col.id, e.target.value)}
-          readOnly={!isEditMode || disabled}
-          style={{ width: '100%', height: isNarrow ? '60px' : '80%', padding: '4px', resize: 'none', verticalAlign: 'top' }}
+          rows={Math.max(2, value.split('\n').length)}
+          style={{ width: '100%', padding: '4px', resize: 'vertical', verticalAlign: 'top' }}
         />
       )
     }
@@ -109,15 +116,15 @@ export function TrackerSectionView({ section, onFieldChange, onColumnValueChange
             ))}
           </div>
         ) : (
-          <div key={field.id} style={{ display: 'flex', alignItems: 'center', gap: '32px', marginBottom: '8px', minHeight: '56px' }}>
-            <div style={{ flex: 2, display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <div key={field.id} style={{ display: 'flex', alignItems: 'stretch', gap: '32px', marginBottom: '8px', minHeight: '40px' }}>
+            <div style={{ flex: 2, display: 'flex', alignItems: 'flex-start', gap: '4px', paddingTop: '4px' }}>
               {renderField(field, onFieldChange, disabled)}
               {isEditMode && (
                 <button onClick={() => onEditTarget({ type: "field", item: field, sectionId: section.id })}>✏️</button>
               )}
             </div>
             {section.columns.map(col => (
-              <div key={col.id} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', alignSelf: 'stretch' }}>
+              <div key={col.id} style={{ flex: 1, display: 'flex', alignItems: 'flex-start', justifyContent: 'center' }}>
                 {renderColumnValue(field.id, col, field.columnValues[col.id] ?? '')}
               </div>
             ))}

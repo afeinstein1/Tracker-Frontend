@@ -1,6 +1,3 @@
-@import "./theme.css";
-@import "./utilities.css";
-
 .react-aria-Meter {
   display: grid;
   grid-template-areas: "label value"
