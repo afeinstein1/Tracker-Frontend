@@ -1,5 +1,6 @@
 import { supabase } from './supabase'
 import { Tracker, TrackerTab, TrackerSection, TrackerField, TabUnlockCondition, SectionUnlockCondition } from '@/Types/field'
+import { isPremiumUser } from './premium'
 
 
 function remapUnlockCondition<T extends { type: string; tabId?: string; fieldId?: string }>(
@@ -165,7 +166,7 @@ export async function uploadImage(file: File, fieldId: string): Promise<string> 
   if (!user) throw new Error('Not authenticated')
 
   const count = await getUserImageCount()
-  if (count >= IMAGE_LIMIT) throw new Error(`Image limit of ${IMAGE_LIMIT} reached`)
+  if (!isPremiumUser(user) && count >= IMAGE_LIMIT) throw new Error(`Image limit of ${IMAGE_LIMIT} reached`)
 
   const ext = file.name.split('.').pop()
   const path = `${user.id}/${fieldId}-${crypto.randomUUID()}.${ext}`
@@ -388,6 +389,20 @@ export async function loadUserTrackers(): Promise<Tracker[]> {
   return Promise.all(data.map(tracker => loadTracker(tracker.id)))
 }
 
+const TRACKER_LIMIT = 10
+
+export async function getUserTrackerCount(): Promise<number> {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+
+  const { count, error } = await supabase
+    .from('trackers')
+    .select('id', { count: 'exact', head: true })
+    .eq('owner_id', user.id)
+  if (error) throw error
+  return count ?? 0
+}
+
 export async function loadPublicTrackers(): Promise<Tracker[]> {
   const { data, error } = await supabase
     .from('trackers')
@@ -411,6 +426,11 @@ export async function createTracker(title: string): Promise<Tracker> {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Not authenticated')
 
+  if (!isPremiumUser(user)) {
+    const count = await getUserTrackerCount()
+    if (count >= TRACKER_LIMIT) throw new Error(`Tracker limit of ${TRACKER_LIMIT} reached`)
+  }
+
   const newTracker: Tracker = {
     id: crypto.randomUUID(),
     title,
@@ -432,22 +452,22 @@ function extractStoragePath(url: string): string | null {
   return url.slice(idx + marker.length).split('?')[0]
 }
 
-async function copyFieldImage(url: string, newFieldId: string, ownerId: string): Promise<string> {
+async function copyFieldImage(url: string, newFieldId: string, ownerId: string): Promise<{ url: string; copied: boolean }> {
   const fromPath = extractStoragePath(url)
-  if (!fromPath) return url
+  if (!fromPath) return { url, copied: false }
 
   const ext = fromPath.split('.').pop()
   const toPath = `${ownerId}/${newFieldId}-${crypto.randomUUID()}.${ext}`
 
   const { error: copyError } = await supabase.storage.from('tracker-images').copy(fromPath, toPath)
-  if (copyError) return url
+  if (copyError) return { url, copied: false }
 
   const { data, error: urlError } = await supabase.storage
     .from('tracker-images')
     .createSignedUrl(toPath, 60 * 60 * 24 * 365)
-  if (urlError || !data) return url
+  if (urlError || !data) return { url, copied: false }
 
-  return data.signedUrl
+  return { url: data.signedUrl, copied: true }
 }
 export async function copyTracker(trackerId: string): Promise<Tracker> {
   const original = await loadTracker(trackerId)
@@ -459,6 +479,8 @@ export async function copyTracker(trackerId: string): Promise<Tracker> {
     original.tabs.flatMap(tab => tab.sections.flatMap(section => section.fields))
       .map(field => [field.id, crypto.randomUUID()])
   )
+
+  let imagesCopied = 0
 
   const tabs: TrackerTab[] = await Promise.all(original.tabs.map(async tab => {
     const sections: TrackerSection[] = await Promise.all(tab.sections.map(async section => {
@@ -472,7 +494,9 @@ export async function copyTracker(trackerId: string): Promise<Tracker> {
           const newColId = columnIdMap.get(colId) ?? colId
           const col = section.columns.find(c => c.id === colId)
           if (col?.type === 'image' && value) {
-            columnValues[newColId] = await copyFieldImage(value, newFieldId, user.id)
+            const result = await copyFieldImage(value, newFieldId, user.id)
+            columnValues[newColId] = result.url
+            if (result.copied) imagesCopied++
           } else {
             columnValues[newColId] = value
           }
@@ -512,5 +536,17 @@ export async function copyTracker(trackerId: string): Promise<Tracker> {
 
   await saveTracker(copied)
   await saveColumnValues(copied)
+
+  if (imagesCopied > 0) {
+    // Copying a tracker always succeeds in full, even if it pushes the
+    // owner's image count past IMAGE_LIMIT - the limit only blocks new
+    // uploads, never a copy.
+    const count = await getUserImageCount()
+    const { error: countError } = await supabase
+      .from('user_image_usage')
+      .upsert({ user_id: user.id, image_count: count + imagesCopied })
+    if (countError) throw countError
+  }
+
   return copied
 }
