@@ -189,6 +189,10 @@ function buildSection(
 // a redundant duplicate - e.g. a character name followed immediately by a category name. The
 // first marker of such a pair becomes a persistent "outer prefix" applied to every subsequent
 // lone marker's section name, until the next back-to-back pair replaces it.
+//
+// A range can also have no marker rows at all - a flat list with no section subdivisions,
+// where 1a is blank (so it's case 2) but nothing ever names a section. Data rows encountered
+// before any marker fall back to fallbackSectionName instead of being rejected.
 function buildSectionsInRange(
   fileName: string,
   rows: string[][],
@@ -196,7 +200,8 @@ function buildSectionsInRange(
   rowEnd: number,
   colStart: number,
   colEnd: number,
-  headerRow: string[]
+  headerRow: string[],
+  fallbackSectionName: string
 ): TrackerSection[] {
   const sections: TrackerSection[] = []
   let pendingMarkers: string[] = []
@@ -242,7 +247,8 @@ function buildSectionsInRange(
       pendingMarkerRows.push(r + 1)
     } else {
       if (pendingMarkers.length === 0) {
-        throw new CsvImportError(fileName, 'Data row appears before any section header', r + 1)
+        pendingMarkers.push(fallbackSectionName)
+        pendingMarkerRows.push(r + 1)
       }
       dataRows.push(rows[r])
       dataRowNumbers.push(r + 1)
@@ -295,7 +301,7 @@ function parseCase3(fileName: string, rows: string[][], width: number): TrackerS
     }
 
     for (const lane of lanes) {
-      sections.push(...buildSectionsInRange(fileName, rows, bandStart, bandEnd, lane.colStart, lane.colEnd, rows[bandStart]))
+      sections.push(...buildSectionsInRange(fileName, rows, bandStart, bandEnd, lane.colStart, lane.colEnd, rows[bandStart], defaultTabName(fileName)))
     }
 
     bandStart = bandEnd
@@ -329,7 +335,7 @@ export function parseCsvFile(fileName: string, rawRows: string[][]): TrackerTab 
     if (padded.length < 2) {
       throw new CsvImportError(fileName, 'No data rows', 1)
     }
-    sections = buildSectionsInRange(fileName, padded, 1, padded.length, 0, width, header)
+    sections = buildSectionsInRange(fileName, padded, 1, padded.length, 0, width, header, defaultTabName(fileName))
   } else {
     if (padded.length < 2) {
       throw new CsvImportError(fileName, 'Row 1 names a section but there are no more rows', 1)
