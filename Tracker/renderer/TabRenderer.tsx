@@ -1,6 +1,7 @@
 import { EditTarget, SectionUnlockCondition, TabUnlockCondition, TrackerTab } from "@/Types/field"
 import { TrackerSectionView } from "./SectionRenderer"
 import { Meter } from "@/components/Meter"
+import { Box, Button, Text } from "@chakra-ui/react"
 
 type Props = {
   tab: TrackerTab
@@ -57,19 +58,15 @@ export function TabView({ allTabs, tab, onFieldChange, onColumnValueChange, isEd
   )
 
   return (
-    <div>
+    <Box>
+      {isTabLocked && (
+        <Text color="fg.muted" p={4}>
+          🔒 This tab unlocks when {getUnlockMessage(tab.unlockCondition!)}
+        </Text>
+      )}
+      <Box opacity={isTabLocked ? 0.5 : 1} position="relative">
         {isTabLocked && (
-          <p style={{ color: 'var(--color-text-muted)', padding: '16px' }}>
-            🔒 This tab unlocks when {getUnlockMessage(tab.unlockCondition!)}
-          </p>
-        )}
-      <div style={{ opacity: isTabLocked ? 0.5 : 1, position: 'relative' }}>
-        {isTabLocked && (
-          <div style={{
-            position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-            zIndex: 10,
-            cursor: 'not-allowed'
-          }} />
+          <Box position="absolute" inset={0} zIndex={10} cursor="not-allowed" />
         )}
         <Meter label="Tab Progress" value={percentage} maxValue={100} />
         {tab.sections.map(section => {
@@ -86,21 +83,19 @@ export function TabView({ allTabs, tab, onFieldChange, onColumnValueChange, isEd
           const isLocked = isSectionLocked || isLockedByTab
 
           return (
-            <div key={section.id} style={{ opacity: isLocked ? 0.5 : 1, position: 'relative' }}>
+            <Box key={section.id} opacity={isLocked ? 0.5 : 1} position="relative">
               {isLocked && (
-                <div style={{
-                  position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  zIndex: 1,
-                  borderRadius: '12px',
-                  backgroundColor: 'rgba(0,0,0,0.05)'
-                }}>
-                  <p style={{ fontWeight: 600 }}>
+                <Box
+                  position="absolute" inset={0}
+                  display="flex" alignItems="center" justifyContent="center"
+                  zIndex={1} borderRadius="lg" bg="blackAlpha.50"
+                >
+                  <Text fontWeight="semibold">
                     🔒 Unlocks when {isLockedByTab ? getUnlockMessage(tab.unlockCondition!) : getUnlockMessage(section.unlockCondition!)}
-                  </p>
-                </div>
+                  </Text>
+                </Box>
               )}
-              <div style={{ pointerEvents: isLocked ? 'none' : 'auto' }}>
+              <Box pointerEvents={isLocked ? 'none' : 'auto'}>
                 <TrackerSectionView
                   section={section}
                   onFieldChange={(fieldId, value) => onFieldChange(section.id, fieldId, value)}
@@ -111,12 +106,12 @@ export function TabView({ allTabs, tab, onFieldChange, onColumnValueChange, isEd
                   onAddField={onAddField}
                   disabled={disabled}
                 />
-              </div>
-            </div>
+              </Box>
+            </Box>
           )
         })}
-        {isEditMode && <button onClick={onAddSection}>+ Section</button>}
-      </div>
-    </div>
+        {isEditMode && <Button variant="outline" onClick={onAddSection}>+ Section</Button>}
+      </Box>
+    </Box>
   )
 }

@@ -1,4 +1,6 @@
 import { useState } from "react"
+import { Dialog, Portal, Field, Input, Button, IconButton, Checkbox, Stack, Text } from "@chakra-ui/react"
+import { SimpleSelect } from "@/components/SimpleSelect"
 import { EditTarget, SectionUnlockCondition, TabUnlockCondition, Tracker, TrackerField } from "@/Types/field"
 
 type Props = {
@@ -31,23 +33,22 @@ export function EditPopup({ tracker, target, onSave, onDelete, onClose }: Props)
     target.type === "section" ? target.item.columns : []
   )
   const [options, setOptions] = useState(
-    target.type === "field" && target.item.type === "dropdown" 
-      ? target.item.options 
+    target.type === "field" && target.item.type === "dropdown"
+      ? target.item.options
       : ['Option 1', 'Option 2']
   )
   const [unlockCondition, setUnlockCondition] = useState<TabUnlockCondition | SectionUnlockCondition | undefined>(
     target.type === "tab" || target.type === "section" ? target.item.unlockCondition : undefined
   )
 
-  
   function handleSave() {
     if (target.type === "tracker") {
       onSave({ ...target, item: { ...target.item, title, is_public: isPublic } })
-      } else if (target.type === "tab") {
-        onSave({ ...target, item: { ...target.item, title, unlockCondition: unlockCondition as TabUnlockCondition } })
-      } else if (target.type === "section") {
+    } else if (target.type === "tab") {
+      onSave({ ...target, item: { ...target.item, title, unlockCondition: unlockCondition as TabUnlockCondition } })
+    } else if (target.type === "section") {
       onSave({ ...target, item: { ...target.item, title, columns, unlockCondition: unlockCondition as any } })
-      } else if (target.type === "field") {
+    } else if (target.type === "field") {
       const updatedField: TrackerField = fieldType === "checkbox"
         ? { ...target.item, label: title, type: "checkbox", checked: target.item.type === "checkbox" ? target.item.checked : false, weight, columnValues: target.item.columnValues }
         : fieldType === "number"
@@ -64,278 +65,277 @@ export function EditPopup({ tracker, target, onSave, onDelete, onClose }: Props)
   }
 
   return (
-    <div style={{
-      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-      backgroundColor: 'rgba(0,0,0,0.5)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      padding: '16px',
-      zIndex: 1000
-    }}>
-    <div style={{
-      backgroundColor: 'var(--color-background)',
-      borderRadius: '12px',
-      padding: '24px',
-      width: '100%',
-      maxWidth: '500px',
-      maxHeight: '90vh',
-      overflowY: 'auto',
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '12px',
-      color: 'var(--color-text)'
-    }}>
-        <h2 style={{ margin: 0 }}>Edit {target.type}</h2>
+    <Dialog.Root open onOpenChange={details => { if (!details.open) onClose() }} placement="center" scrollBehavior="inside">
+      <Portal>
+        <Dialog.Backdrop />
+        <Dialog.Positioner>
+          <Dialog.Content maxW="500px">
+            <Dialog.Header>
+              <Dialog.Title textTransform="capitalize">Edit {target.type}</Dialog.Title>
+            </Dialog.Header>
 
-        {!confirming ? (
-          <>
-            <label>
-              {target.type === "field" ? "Label" : "Title"}
-              <input
-                value={title}
-                onChange={e => setTitle(e.target.value)}
-                style={{ display: 'block', width: '100%', marginTop: '4px' }}
-              />
-            </label>
-            
-            
-            {target.type === "tracker" && (
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <input
-                  type="checkbox"
-                  checked={isPublic}
-                  onChange={e => setIsPublic(e.target.checked)}
-                />
-                Make this tracker public
-              </label>
-            )}
-            {(target.type === "tab" || target.type === "section") && (
-              <div>
-                <label>
-                  Unlock Condition
-                  <select
-                    value={unlockCondition?.type ?? 'none'}
-                    onChange={e => {
-                      const type = e.target.value
-                      if (type === 'none') setUnlockCondition(undefined)
-                      else if (type === 'overall') setUnlockCondition({ type: 'overall', percentage: 50 })
-                      else if (type === 'tab') setUnlockCondition({ type: 'tab', tabId: '', percentage: 50 })
-                      else if (type === 'field') setUnlockCondition({ type: 'field', fieldId: '' })
-                    }}
-                    style={{ display: 'block', width: '100%', marginTop: '4px' }}
-                  >
-                  <option value="none">No lock</option>
-                  <option value="overall">Overall completion %</option>
-                  <option value="tab">Another tab's completion %</option>
-                  <option value="field">Specific field complete</option>
-                  </select>
-                </label>
+            <Dialog.Body>
+              {!confirming ? (
+                <Stack gap={4}>
+                  <Field.Root>
+                    <Field.Label>{target.type === "field" ? "Label" : "Title"}</Field.Label>
+                    <Input value={title} onChange={e => setTitle(e.target.value)} />
+                  </Field.Root>
 
-                {unlockCondition?.type === 'overall' && (
-                  <label>
-                    Percentage
-                    <input
-                      type="number"
-                      value={unlockCondition.percentage}
-                      min={0}
-                      max={100}
-                      onChange={e => setUnlockCondition({ ...unlockCondition, percentage: Number(e.target.value) })}
-                      style={{ display: 'block', width: '100%', marginTop: '4px' }}
-                    />
-                  </label>
-                )}
+                  {target.type === "tracker" && (
+                    <Checkbox.Root checked={isPublic} onCheckedChange={d => setIsPublic(!!d.checked)}>
+                      <Checkbox.HiddenInput />
+                      <Checkbox.Control />
+                      <Checkbox.Label>Make this tracker public</Checkbox.Label>
+                    </Checkbox.Root>
+                  )}
 
-                {unlockCondition?.type === 'tab' && (
-                  <>
-                    <label>
-                      Tab
-                      <select
-                        value={unlockCondition.tabId ?? ''}
-                        onChange={e => setUnlockCondition({ ...unlockCondition, tabId: e.target.value })}
-                        style={{ display: 'block', width: '100%', marginTop: '4px' }}
-                      >
-                        <option value="">Select a tab...</option>
-                        {tracker.tabs.map(tab => (
-                          <option key={tab.id} value={tab.id}>{tab.title}</option>
-                        ))}
-                      </select>
-                    </label>
-                    <label>
-                      Percentage
-                      <input
-                        type="number"
-                        value={unlockCondition.percentage}
-                        min={0}
-                        max={100}
-                        onChange={e => setUnlockCondition({ ...unlockCondition, percentage: Number(e.target.value) })}
-                        style={{ display: 'block', width: '100%', marginTop: '4px' }}
-                      />
-                    </label>
-                  </>
-                )}
+                  {(target.type === "tab" || target.type === "section") && (
+                    <Stack gap={3}>
+                      <Field.Root>
+                        <Field.Label>Unlock Condition</Field.Label>
+                        <SimpleSelect
+                          value={unlockCondition?.type ?? 'none'}
+                          onChange={type => {
+                            if (type === 'none') setUnlockCondition(undefined)
+                            else if (type === 'overall') setUnlockCondition({ type: 'overall', percentage: 50 })
+                            else if (type === 'tab') setUnlockCondition({ type: 'tab', tabId: '', percentage: 50 })
+                            else if (type === 'field') setUnlockCondition({ type: 'field', fieldId: '' })
+                          }}
+                          options={[
+                            { value: 'none', label: 'No lock' },
+                            { value: 'overall', label: 'Overall completion %' },
+                            { value: 'tab', label: "Another tab's completion %" },
+                            { value: 'field', label: 'Specific field complete' }
+                          ]}
+                        />
+                      </Field.Root>
 
-                {unlockCondition?.type === 'field' && (
-                  <label>
-                    Field
-                    <select
-                      value={(unlockCondition as any).fieldId ?? ''}
-                      onChange={e => setUnlockCondition({ ...unlockCondition, fieldId: e.target.value } as any)}
-                      style={{ display: 'block', width: '100%', marginTop: '4px' }}
-                    >
-                      <option value="">Select a field...</option>
-                      {tracker.tabs.flatMap(tab =>
-                        tab.sections.flatMap(section =>
-                          section.fields.map(field => (
-                            <option key={field.id} value={field.id}>
-                              {tab.title} → {section.title} → {field.label}
-                            </option>
-                          ))
-                        )
+                      {unlockCondition?.type === 'overall' && (
+                        <Field.Root>
+                          <Field.Label>Percentage</Field.Label>
+                          <Input
+                            type="number"
+                            value={unlockCondition.percentage}
+                            min={0}
+                            max={100}
+                            onChange={e => setUnlockCondition({ ...unlockCondition, percentage: Number(e.target.value) })}
+                          />
+                        </Field.Root>
                       )}
-                    </select>
-                  </label>
-                )}
-                <small style={{ color: 'var(--color-text-muted)' }}>
-                  {target.type === "tab"
-                    ? "Locks this tab until the condition is met"
-                    : "Locks this section until the condition is met"}
-                </small>
-              </div>
-            )}
-            {target.type === "section" && (
-              <div>
-                <p style={{ margin: '0 0 8px 0', fontWeight: 600 }}>Extra Columns</p>
-                {columns.map((col, index) => (
-                  <div key={col.id} style={{ marginBottom: '12px', paddingBottom: '12px', borderBottom: '1px solid var(--color-border)' }}>
-                    <div style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
-                      <input
-                        value={col.label}
-                        onChange={e => setColumns(prev => prev.map((c, i) =>
-                          i === index ? { ...c, label: e.target.value } : c
-                        ))}
-                        placeholder="Column name"
-                        style={{ flex: 1, padding: '4px' }}
-                      />
-                      <select
-                        value={col.type}
-                        onChange={e => setColumns(prev => prev.map((c, i) =>
-                          i === index ? { ...c, type: e.target.value as "text" | "image" | "dropdown", options: e.target.value === 'dropdown' ? (c.options ?? ['Option 1', 'Option 2']) : c.options } : c
-                        ))}
-                        style={{ padding: '4px' }}
-                      >
-                        <option value="text">Text</option>
-                        <option value="image">Image</option>
-                        <option value="dropdown">Dropdown</option>
-                      </select>
-                      <button onClick={() => setColumns(prev => prev.filter((_, i) => i !== index))}
-                        style={{ color: 'red' }}>✕</button>
-                    </div>
-                    {col.type === 'dropdown' && (
-                      <div style={{ paddingLeft: '8px' }}>
-                        {(col.options ?? []).map((option, optIndex) => (
-                          <div key={optIndex} style={{ display: 'flex', gap: '8px', marginBottom: '4px' }}>
-                            <input
-                              value={option}
-                              onChange={e => setColumns(prev => prev.map((c, i) =>
-                                i !== index ? c : { ...c, options: (c.options ?? []).map((o, oi) => oi === optIndex ? e.target.value : o) }
-                              ))}
-                              placeholder={`Option ${optIndex + 1}`}
-                              style={{ flex: 1, padding: '4px' }}
+
+                      {unlockCondition?.type === 'tab' && (
+                        <>
+                          <Field.Root>
+                            <Field.Label>Tab</Field.Label>
+                            <SimpleSelect
+                              value={unlockCondition.tabId ?? ''}
+                              onChange={v => setUnlockCondition({ ...unlockCondition, tabId: v })}
+                              placeholder="Select a tab..."
+                              options={tracker.tabs.map(tab => ({ value: tab.id, label: tab.title }))}
                             />
-                            <button onClick={() => setColumns(prev => prev.map((c, i) =>
-                              i !== index ? c : { ...c, options: (c.options ?? []).filter((_, oi) => oi !== optIndex) }
-                            ))} style={{ color: 'red' }}>✕</button>
-                          </div>
-                        ))}
-                        <button onClick={() => setColumns(prev => prev.map((c, i) =>
-                          i !== index ? c : { ...c, options: [...(c.options ?? []), ''] }
-                        ))}>+ Add Option</button>
-                      </div>
-                    )}
-                  </div>
-                ))}
-                <button onClick={() => setColumns(prev => [...prev, {
-                  id: crypto.randomUUID(),
-                  label: 'New Column',
-                  type: 'text' as const
-                }])}>+ Add Column</button>
-              </div>
-            )}
-            {target.type === "field" && (
-              <>
-                <label>
-                  Type
-                  <select
-                    value={fieldType}
-                    onChange={e => setFieldType(e.target.value as "checkbox" | "number" | "dropdown")}
-                    style={{ display: 'block', width: '100%', marginTop: '4px' }}
-                  >
-                    <option value="checkbox">Checkbox</option>
-                    <option value="number">Number</option>
-                    <option value="dropdown">Dropdown</option>
-                  </select>
-                </label>
+                          </Field.Root>
+                          <Field.Root>
+                            <Field.Label>Percentage</Field.Label>
+                            <Input
+                              type="number"
+                              value={unlockCondition.percentage}
+                              min={0}
+                              max={100}
+                              onChange={e => setUnlockCondition({ ...unlockCondition, percentage: Number(e.target.value) })}
+                            />
+                          </Field.Root>
+                        </>
+                      )}
 
-                {fieldType === "number" && (
-                  <label>
-                    Max Value
-                    <input
-                      type="number"
-                      value={max}
-                      onChange={e => setMax(Number(e.target.value))}
-                      style={{ display: 'block', width: '100%', marginTop: '4px' }}
-                    />
-                  </label>
-                )}
-                <label>
-                  Weight
-                  <input
-                    type="number"
-                    value={weight}
-                    onChange={e => setWeight(Number(e.target.value))}
-                    style={{ display: 'block', width: '100%', marginTop: '4px' }}
-                  />
-                </label>
-              </>
-            )}
-            {fieldType === "dropdown" && (
-              <div>
-                <p style={{ margin: '0 0 8px 0', fontWeight: 600 }}>Options</p>
-                {options.map((option, index) => (
-                  <div key={index} style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
-                    <input
-                      value={option}
-                      onChange={e => setOptions(prev => prev.map((o, i) => i === index ? e.target.value : o))}
-                      placeholder={`Option ${index + 1}`}
-                      style={{ flex: 1, padding: '4px' }}
-                    />
-                    <button onClick={() => setOptions(prev => prev.filter((_, i) => i !== index))} style={{ color: 'red' }}>✕</button>
-                  </div>
-                ))}
-                <button onClick={() => setOptions(prev => [...prev, ''])}>+ Add Option</button>
-              </div>
-            )}
+                      {unlockCondition?.type === 'field' && (
+                        <Field.Root>
+                          <Field.Label>Field</Field.Label>
+                          <SimpleSelect
+                            value={(unlockCondition as any).fieldId ?? ''}
+                            onChange={v => setUnlockCondition({ ...unlockCondition, fieldId: v } as any)}
+                            placeholder="Select a field..."
+                            options={tracker.tabs.flatMap(tab =>
+                              tab.sections.flatMap(section =>
+                                section.fields.map(field => ({
+                                  value: field.id,
+                                  label: `${tab.title} → ${section.title} → ${field.label}`
+                                }))
+                              )
+                            )}
+                          />
+                        </Field.Root>
+                      )}
+                      <Text fontSize="sm" color="fg.muted">
+                        {target.type === "tab"
+                          ? "Locks this tab until the condition is met"
+                          : "Locks this section until the condition is met"}
+                      </Text>
+                    </Stack>
+                  )}
 
-            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-              {target.type !== "tracker" && (
-                <button onClick={() => setConfirming(true)} style={{ color: 'red' }}>
-                  Delete
-                </button>
+                  {target.type === "section" && (
+                    <Stack gap={3}>
+                      <Text fontWeight="semibold">Extra Columns</Text>
+                      {columns.map((col, index) => (
+                        <Stack key={col.id} gap={2} pb={3} borderBottomWidth="1px" borderColor="border">
+                          <Stack direction="row" gap={2} align="center">
+                            <Input
+                              value={col.label}
+                              onChange={e => setColumns(prev => prev.map((c, i) =>
+                                i === index ? { ...c, label: e.target.value } : c
+                              ))}
+                              placeholder="Column name"
+                            />
+                            <SimpleSelect
+                              width="auto"
+                              value={col.type}
+                              onChange={v => setColumns(prev => prev.map((c, i) =>
+                                i === index ? { ...c, type: v as "text" | "image" | "dropdown", options: v === 'dropdown' ? (c.options ?? ['Option 1', 'Option 2']) : c.options } : c
+                              ))}
+                              options={[
+                                { value: 'text', label: 'Text' },
+                                { value: 'image', label: 'Image' },
+                                { value: 'dropdown', label: 'Dropdown' }
+                              ]}
+                            />
+                            <IconButton
+                              aria-label="Remove column"
+                              size="sm"
+                              colorPalette="red"
+                              variant="ghost"
+                              onClick={() => setColumns(prev => prev.filter((_, i) => i !== index))}
+                            >
+                              ✕
+                            </IconButton>
+                          </Stack>
+                          {col.type === 'dropdown' && (
+                            <Stack pl={2} gap={1}>
+                              {(col.options ?? []).map((option, optIndex) => (
+                                <Stack key={optIndex} direction="row" gap={2}>
+                                  <Input
+                                    value={option}
+                                    onChange={e => setColumns(prev => prev.map((c, i) =>
+                                      i !== index ? c : { ...c, options: (c.options ?? []).map((o, oi) => oi === optIndex ? e.target.value : o) }
+                                    ))}
+                                    placeholder={`Option ${optIndex + 1}`}
+                                  />
+                                  <IconButton
+                                    aria-label="Remove option"
+                                    size="sm"
+                                    colorPalette="red"
+                                    variant="ghost"
+                                    onClick={() => setColumns(prev => prev.map((c, i) =>
+                                      i !== index ? c : { ...c, options: (c.options ?? []).filter((_, oi) => oi !== optIndex) }
+                                    ))}
+                                  >
+                                    ✕
+                                  </IconButton>
+                                </Stack>
+                              ))}
+                              <Button size="sm" variant="outline" onClick={() => setColumns(prev => prev.map((c, i) =>
+                                i !== index ? c : { ...c, options: [...(c.options ?? []), ''] }
+                              ))}>
+                                + Add Option
+                              </Button>
+                            </Stack>
+                          )}
+                        </Stack>
+                      ))}
+                      <Button size="sm" variant="outline" alignSelf="flex-start" onClick={() => setColumns(prev => [...prev, {
+                        id: crypto.randomUUID(),
+                        label: 'New Column',
+                        type: 'text' as const
+                      }])}>
+                        + Add Column
+                      </Button>
+                    </Stack>
+                  )}
+
+                  {target.type === "field" && (
+                    <Stack gap={3}>
+                      <Field.Root>
+                        <Field.Label>Type</Field.Label>
+                        <SimpleSelect
+                          value={fieldType}
+                          onChange={v => setFieldType(v as "checkbox" | "number" | "dropdown")}
+                          options={[
+                            { value: 'checkbox', label: 'Checkbox' },
+                            { value: 'number', label: 'Number' },
+                            { value: 'dropdown', label: 'Dropdown' }
+                          ]}
+                        />
+                      </Field.Root>
+
+                      {fieldType === "number" && (
+                        <Field.Root>
+                          <Field.Label>Max Value</Field.Label>
+                          <Input type="number" value={max} onChange={e => setMax(Number(e.target.value))} />
+                        </Field.Root>
+                      )}
+                      <Field.Root>
+                        <Field.Label>Weight</Field.Label>
+                        <Input type="number" value={weight} onChange={e => setWeight(Number(e.target.value))} />
+                      </Field.Root>
+                    </Stack>
+                  )}
+
+                  {fieldType === "dropdown" && (
+                    <Stack gap={2}>
+                      <Text fontWeight="semibold">Options</Text>
+                      {options.map((option, index) => (
+                        <Stack key={index} direction="row" gap={2}>
+                          <Input
+                            value={option}
+                            onChange={e => setOptions(prev => prev.map((o, i) => i === index ? e.target.value : o))}
+                            placeholder={`Option ${index + 1}`}
+                          />
+                          <IconButton
+                            aria-label="Remove option"
+                            size="sm"
+                            colorPalette="red"
+                            variant="ghost"
+                            onClick={() => setOptions(prev => prev.filter((_, i) => i !== index))}
+                          >
+                            ✕
+                          </IconButton>
+                        </Stack>
+                      ))}
+                      <Button size="sm" variant="outline" alignSelf="flex-start" onClick={() => setOptions(prev => [...prev, ''])}>
+                        + Add Option
+                      </Button>
+                    </Stack>
+                  )}
+                </Stack>
+              ) : (
+                <Stack gap={3}>
+                  <Text>{getDeleteWarning()}</Text>
+                  <Text>Are you sure?</Text>
+                </Stack>
               )}
-              <button onClick={onClose}>Cancel</button>
-              <button onClick={handleSave}>Save</button>
-            </div>
-          </>
-        ) : (
-          <>
-            <p>{getDeleteWarning()}</p>
-            <p>Are you sure?</p>
-            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-              <button onClick={() => setConfirming(false)}>Go Back</button>
-              <button onClick={onDelete} style={{ color: 'red' }}>Confirm Delete</button>
-            </div>
-          </>
-        )}
-      </div>
-    </div>
+            </Dialog.Body>
+
+            <Dialog.Footer>
+              {!confirming ? (
+                <Stack direction="row" gap={2} justify="flex-end" width="100%">
+                  {target.type !== "tracker" && (
+                    <Button variant="ghost" colorPalette="red" onClick={() => setConfirming(true)}>
+                      Delete
+                    </Button>
+                  )}
+                  <Button variant="outline" onClick={onClose}>Cancel</Button>
+                  <Button colorPalette="brand" onClick={handleSave}>Save</Button>
+                </Stack>
+              ) : (
+                <Stack direction="row" gap={2} justify="flex-end" width="100%">
+                  <Button variant="outline" onClick={() => setConfirming(false)}>Go Back</Button>
+                  <Button colorPalette="red" onClick={onDelete}>Confirm Delete</Button>
+                </Stack>
+              )}
+            </Dialog.Footer>
+          </Dialog.Content>
+        </Dialog.Positioner>
+      </Portal>
+    </Dialog.Root>
   )
 }
