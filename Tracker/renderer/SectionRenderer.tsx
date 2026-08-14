@@ -2,6 +2,8 @@ import { useWindowDimensions } from "react-native"
 import { EditTarget, TrackerSection } from "@/Types/field"
 import { renderField } from "./renderer"
 import { ImageField } from '@/components/ImageField'
+import { Box, Button, Heading, IconButton, Input, Stack, Text, Textarea } from "@chakra-ui/react"
+import { SimpleSelect } from "@/components/SimpleSelect"
 
 type Props = {
   section: TrackerSection
@@ -22,117 +24,106 @@ export function TrackerSectionView({ section, onFieldChange, onColumnValueChange
     if (col.type === 'text') {
       if (!isEditMode || disabled) {
         return (
-          <div style={{ width: '100%', padding: '4px', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+          <Text w="100%" p={1} whiteSpace="pre-wrap" wordBreak="break-word">
             {value}
-          </div>
+          </Text>
         )
       }
       return (
-        <textarea
+        <Textarea
           value={value}
           onChange={e => onColumnValueChange(fieldId, col.id, e.target.value)}
           rows={Math.max(2, value.split('\n').length)}
-          style={{ width: '100%', padding: '4px', resize: 'vertical', verticalAlign: 'top' }}
+          resize="vertical"
         />
       )
     }
     if (col.type === 'image') {
       return (
-        <div>
+        <Box>
           <ImageField
             fieldId={fieldId}
             value={value}
             onChange={url => onColumnValueChange(fieldId, col.id, url)}
             isEditMode={isEditMode && !disabled}
           />
-        </div>
+        </Box>
       )
     }
     if (col.type === 'dropdown') {
       return (
-        <select
-          value={value}
-          onChange={e => onColumnValueChange(fieldId, col.id, e.target.value)}
+        <SimpleSelect
           disabled={!isEditMode || disabled}
-          style={{ width: '100%', padding: '4px' }}
-        >
-          <option value="">—</option>
-          {(col.options ?? []).map((option, i) => (
-            <option key={i} value={option}>{option}</option>
-          ))}
-        </select>
+          value={value}
+          onChange={v => onColumnValueChange(fieldId, col.id, v)}
+          options={[{ value: '', label: '—' }, ...(col.options ?? []).map(option => ({ value: option, label: option }))]}
+        />
       )
     }
     return (
-      <input
+      <Input
         value={value}
         onChange={e => onColumnValueChange(fieldId, col.id, e.target.value)}
         readOnly={!isEditMode || disabled}
-        style={{ width: '100%', padding: '4px' }}
       />
     )
   }
 
   return (
-    <div style={{
-      border: '2px solid #ccc',
-      borderRadius: '12px',
-      padding: '16px',
-      marginBottom: '16px'
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <h2 style={{ margin: 0 }}>{section.title}</h2>
+    <Box borderWidth="1px" borderColor="border" borderRadius="lg" p={4} mb={4}>
+      <Stack direction="row" align="center" gap={2} mb={3}>
+        <Heading size="md">{section.title}</Heading>
         {isEditMode && (
-          <button onClick={() => onEditTarget({ type: "section", item: section, tabId: tabId })}>✏️</button>
+          <IconButton aria-label="Edit section" size="sm" variant="ghost" onClick={() => onEditTarget({ type: "section", item: section, tabId: tabId })}>✏️</IconButton>
         )}
-      </div>
+      </Stack>
 
       {!isNarrow && section.columns.length > 0 && (
-        <div style={{ display: 'flex', gap: '32px', marginBottom: '4px' }}>
-          <div style={{ flex: 2, display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <div>Field</div>
-            {isEditMode && <div style={{ width: '28px' }} />}
-          </div>
+        <Stack direction="row" gap={8} mb={1}>
+          <Stack direction="row" flex={2} align="center" gap={1}>
+            <Text>Field</Text>
+            {isEditMode && <Box w="28px" />}
+          </Stack>
           {section.columns.map(col => (
-            <div key={col.id} style={{ flex: 1, fontWeight: 600, textAlign: 'center' }}>{col.label}</div>
+            <Text key={col.id} flex={1} fontWeight="semibold" textAlign="center">{col.label}</Text>
           ))}
-        </div>
+        </Stack>
       )}
 
       {section.fields.map(field => (
         isNarrow ? (
-          <div key={field.id} style={{ marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid var(--color-border)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: section.columns.length > 0 ? '12px' : 0 }}>
+          <Box key={field.id} mb={4} pb={4} borderBottomWidth="1px" borderColor="border">
+            <Stack direction="row" align="center" gap={1} mb={section.columns.length > 0 ? 3 : 0}>
               {renderField(field, onFieldChange, disabled)}
               {isEditMode && (
-                <button onClick={() => onEditTarget({ type: "field", item: field, sectionId: section.id })}>✏️</button>
+                <IconButton aria-label="Edit field" size="sm" variant="ghost" onClick={() => onEditTarget({ type: "field", item: field, sectionId: section.id })}>✏️</IconButton>
               )}
-            </div>
+            </Stack>
             {section.columns.map(col => (
-              <div key={col.id} style={{ marginBottom: '8px' }}>
-                <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--color-text-muted)', marginBottom: '4px' }}>{col.label}</div>
+              <Box key={col.id} mb={2}>
+                <Text fontSize="xs" fontWeight="semibold" color="fg.muted" mb={1}>{col.label}</Text>
                 {renderColumnValue(field.id, col, field.columnValues[col.id] ?? '')}
-              </div>
+              </Box>
             ))}
-          </div>
+          </Box>
         ) : (
-          <div key={field.id} style={{ display: 'flex', alignItems: 'stretch', gap: '32px', marginBottom: '8px', minHeight: '40px' }}>
-            <div style={{ flex: 2, display: 'flex', alignItems: 'flex-start', gap: '4px', paddingTop: '4px' }}>
+          <Stack key={field.id} direction="row" align="stretch" gap={8} mb={2} minH="40px">
+            <Stack direction="row" flex={2} align="flex-start" gap={1} pt={1}>
               {renderField(field, onFieldChange, disabled)}
               {isEditMode && (
-                <button onClick={() => onEditTarget({ type: "field", item: field, sectionId: section.id })}>✏️</button>
+                <IconButton aria-label="Edit field" size="sm" variant="ghost" onClick={() => onEditTarget({ type: "field", item: field, sectionId: section.id })}>✏️</IconButton>
               )}
-            </div>
+            </Stack>
             {section.columns.map(col => (
-              <div key={col.id} style={{ flex: 1, display: 'flex', alignItems: 'flex-start', justifyContent: 'center' }}>
+              <Box key={col.id} flex={1} display="flex" alignItems="flex-start" justifyContent="center">
                 {renderColumnValue(field.id, col, field.columnValues[col.id] ?? '')}
-              </div>
+              </Box>
             ))}
-          </div>
+          </Stack>
         )
       ))}
 
-      {isEditMode && <button style={{ marginTop: '8px' }} onClick={() => onAddField(section.id)}>+ Field</button>}
-    </div>
+      {isEditMode && <Button mt={2} variant="outline" onClick={() => onAddField(section.id)}>+ Field</Button>}
+    </Box>
   )
 }

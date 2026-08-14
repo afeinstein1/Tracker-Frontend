@@ -3,6 +3,7 @@ import { TabView } from "./TabRenderer"
 import { Meter } from "@/components/Meter"
 import { useEffect, useState } from "react"
 import { EditPopup } from "@/components/editPopup"
+import { Box, Button, Heading, IconButton, Stack, Text } from "@chakra-ui/react"
 
 type Props = {
   tracker: Tracker
@@ -268,45 +269,50 @@ const totalProgress = fields.reduce((sum, field) => {
 
 
 return (
-  <div style={{ width: '90%', margin: '0 auto' }}>
-    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-      <h1>{tracker.title}</h1>
+  <Box width="90%" mx="auto" py={4}>
+    <Stack direction="row" align="center" gap={2} wrap="wrap">
+      <Heading size="xl">{tracker.title}</Heading>
       {isEditMode && (
-        <button onClick={() => setEditTarget({ type: "tracker", item: tracker })}>✏️</button>
+        <IconButton aria-label="Edit tracker" variant="ghost" size="sm" onClick={() => setEditTarget({ type: "tracker", item: tracker })}>✏️</IconButton>
       )}
       {readOnly ? (
         onCopy && (
-          <button onClick={onCopy} style={{ marginLeft: 'auto' }}>
+          <Button ml="auto" variant="outline" onClick={onCopy}>
             Make a Copy
-          </button>
+          </Button>
         )
       ) : (
-        <button onClick={() => setIsEditMode(!isEditMode)} style={{ marginLeft: 'auto' }}>
+        <Button ml="auto" variant="outline" onClick={() => setIsEditMode(!isEditMode)}>
           {isEditMode ? "Done" : "Edit"}
-        </button>
+        </Button>
       )}
-    </div>
+    </Stack>
 
     <Meter label="Overall Progress" value={percentage} maxValue={100} />
 
-    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+    <Stack direction="row" gap={2} wrap="wrap" mb={4}>
       {tracker.tabs.map((tab, index) => (
-        <div key={tab.id} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <button onClick={() => setActiveTab(index)}>
+        <Stack key={tab.id} direction="row" align="center" gap={1}>
+          <Button
+            size="sm"
+            variant={index === activeTab ? "solid" : "outline"}
+            colorPalette={index === activeTab ? "brand" : "gray"}
+            onClick={() => setActiveTab(index)}
+          >
             {tab.title}
-          </button>
+          </Button>
           {isEditMode && (
-            <button onClick={() => setEditTarget({ type: "tab", item: tab })}>✏️</button>
+            <IconButton aria-label="Edit tab" size="sm" variant="ghost" onClick={() => setEditTarget({ type: "tab", item: tab })}>✏️</IconButton>
           )}
-        </div>
+        </Stack>
       ))}
-      {isEditMode && <button onClick={handleAddTab}>+ Tab</button>}
-    </div>
+      {isEditMode && <Button size="sm" variant="outline" onClick={handleAddTab}>+ Tab</Button>}
+    </Stack>
 
     {tracker.tabs.length === 0 ? (
-      <p>No tabs yet. {isEditMode ? "Click + Tab to add one." : "Click Edit to get started."}</p>
+      <Text color="fg.muted">No tabs yet. {isEditMode ? "Click + Tab to add one." : "Click Edit to get started."}</Text>
     ) : (
-      <div style={{ pointerEvents: readOnly ? 'none' : 'auto' }}>
+      <Box pointerEvents={readOnly ? 'none' : 'auto'}>
         <TabView
           tab={tracker.tabs[activeTab]}
           allTabs={tracker.tabs}
@@ -320,7 +326,7 @@ return (
           tabPercentages={tabPercentages}
           disabled={readOnly}
         />
-      </div>
+      </Box>
     )}
 
     {editTarget && (
@@ -341,6 +347,6 @@ return (
         onClose={() => setEditTarget(null)}
       />
     )}
-  </div>
+  </Box>
 )
 }

@@ -3,6 +3,8 @@ import * as Sentry from "@sentry/react-native"
 import { Stack, useRouter, useSegments } from "expo-router"
 import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
+import { ChakraProvider } from "@chakra-ui/react"
+import { system } from "@/lib/chakraSystem"
 // CSS @import doesn't get resolved by Metro's web bundler - theme.css and utilities.css were
 // never actually loading anywhere in the app (only reachable via @import from Meter.css/Form.css).
 // Importing them directly here, once, makes their custom properties and utility classes available
@@ -51,10 +53,12 @@ export default Sentry.wrap(function RootLayout() {
   if (loading) return null
 
 return (
-    <div style={{ minHeight: '100vh', backgroundColor: 'var(--color-background)', color: 'var(--color-text)' }}>
-      <Sentry.ErrorBoundary fallback={<p style={{ padding: '24px' }}>Something went wrong. Please refresh the page.</p>}>
-        <Stack screenOptions={{ headerShown: false }} />
-      </Sentry.ErrorBoundary>
-    </div>
+    <ChakraProvider value={system}>
+      <div style={{ minHeight: '100vh', backgroundColor: 'var(--color-background)', color: 'var(--color-text)' }}>
+        <Sentry.ErrorBoundary fallback={<p style={{ padding: '24px' }}>Something went wrong. Please refresh the page.</p>}>
+          <Stack screenOptions={{ headerShown: false }} />
+        </Sentry.ErrorBoundary>
+      </div>
+    </ChakraProvider>
   )
 });

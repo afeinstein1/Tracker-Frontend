@@ -1,10 +1,11 @@
-import { Stack, useLocalSearchParams, useRouter } from "expo-router"
+import { Stack as ExpoStack, useLocalSearchParams, useRouter } from "expo-router"
 import { useEffect, useState } from "react"
 import { loadTracker, saveColumnValues, saveTracker, saveTrackerValues, copyTracker, resetTrackerProgress } from "@/lib/trackerService"
 import { supabase } from "@/lib/supabase"
 import { TrackerView } from "@/renderer/TrackerRenderer"
 import { Tracker } from "@/Types/field"
 import AdBanner, { AD_BANNER_HEIGHT } from "@/components/AdBanner"
+import { Box, Button, Text } from "@chakra-ui/react"
 
 export default function TrackerPage() {
   const { id, created } = useLocalSearchParams<{ id: string; created?: string }>()
@@ -55,14 +56,14 @@ export default function TrackerPage() {
     }
   }
 
-  if (loading) return <p>Loading...</p>
-  if (error) return <p>Error: {error}</p>
-  if (!tracker) return <p>Tracker not found</p>
+  if (loading) return <Text p={6}>Loading...</Text>
+  if (error) return <Text p={6} color="red.fg">Error: {error}</Text>
+  if (!tracker) return <Text p={6}>Tracker not found</Text>
 
   return (
-    <div style={{ paddingBottom: AD_BANNER_HEIGHT }}>
-      <Stack.Screen options={{ headerShown: false }} />
-      <button onClick={() => router.canGoBack() ? router.back() : router.push('/')} style={{ margin: '16px' }}>← Back</button>
+    <Box pb={`${AD_BANNER_HEIGHT}px`}>
+      <ExpoStack.Screen options={{ headerShown: false }} />
+      <Button variant="ghost" m={4} onClick={() => router.canGoBack() ? router.back() : router.push('/')}>← Back</Button>
       <TrackerView
         key={tracker.id}
         tracker={tracker}
@@ -72,6 +73,6 @@ export default function TrackerPage() {
         autoOpenEdit={created === '1'}
       />
       <AdBanner />
-    </div>
+    </Box>
   )
 }

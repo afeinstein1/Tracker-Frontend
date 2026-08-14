@@ -1,5 +1,6 @@
 import { DropdownField } from "@/Types/field"
-import { Label } from '@/components/form'
+import { Box, Text } from "@chakra-ui/react"
+import { SimpleSelect } from "@/components/SimpleSelect"
 
 type Props = {
   field: DropdownField
@@ -8,18 +9,15 @@ type Props = {
 }
 export function DropdownFieldView({ field, onChange, disabled = false }: Props) {
   return (
-    <div>
-      <Label style={{ display: 'block', marginBottom: '4px' }}>{field.label}</Label>
-      <select
-        value={field.selected}
-        onChange={e => onChange(Number(e.target.value))}
+    <Box>
+      <Text fontSize="sm" mb={1}>{field.label}</Text>
+      <SimpleSelect
+        width="200px"
         disabled={disabled}
-        style={{ width: '100%', maxWidth: '200px', padding: '4px' }}
-      >
-        {field.options.map((option, index) => (   
-          <option key={index} value={index}>{option}</option>
-        ))}
-      </select>
-    </div>
+        value={String(field.selected)}
+        onChange={v => onChange(Number(v))}
+        options={field.options.map((option, index) => ({ value: String(index), label: option }))}
+      />
+    </Box>
   )
 }
